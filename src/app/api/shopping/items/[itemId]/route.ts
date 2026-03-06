@@ -14,7 +14,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ it
     data: { user },
   } = await supabaseServer.auth.getUser();
 
-  const supabase = createSupabaseAdminClient();
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createSupabaseAdminClient() : supabaseServer;
   const { data: item, error: itemError } = await supabase
     .from("shopping_items")
     .select("id, shopping_list_id")

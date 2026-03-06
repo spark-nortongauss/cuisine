@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type CookPayload = {
   prepSchedule?: { slot: string; action: string }[];
@@ -21,26 +21,36 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
     data: { user },
   } = await supabaseServer.auth.getUser();
 
-  const supabase = createSupabaseAdminClient();
-  const { data: list } = await supabase
+  const { data: list, error: listError } = await supabaseServer
     .from("shopping_lists")
     .select("id, chef_user_id, menu_title, serve_at, status")
     .eq("menu_generation_id", menuId)
     .eq("status", "purchased")
     .single();
 
+  if (listError) {
+    console.error("[cook-detail] shopping list query error", listError);
+  }
+
   if (!list) return notFound();
   if (user?.id && list.chef_user_id && list.chef_user_id !== user.id) return notFound();
 
-  const { data: cookPlan } = await supabase.from("cook_plans").select("payload").eq("menu_generation_id", menuId).single();
+  const { data: cookPlan, error: planError } = await supabaseServer.from("cook_plans").select("payload").eq("menu_generation_id", menuId).single();
+  if (planError) {
+    console.error("[cook-detail] cook plan query error", planError);
+  }
   const payload = (cookPlan?.payload ?? {}) as CookPayload;
+  const parsedDate = list.serve_at ? new Date(list.serve_at) : null;
+  const serviceLabel = parsedDate && !Number.isNaN(parsedDate.getTime())
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(parsedDate)
+    : "Service time TBD";
 
   return (
     <PageTransition>
       <PageHero
         eyebrow="Service Timeline"
         title={list.menu_title}
-        description={new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(list.serve_at))}
+        description={serviceLabel}
       />
 
       <div className="space-y-3">
@@ -60,9 +70,9 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
               <div key={recipe.dish} className="rounded-xl border border-border/60 p-3">
                 <p className="font-medium">{recipe.dish}</p>
                 <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">Ingredients</p>
-                <ul className="list-disc pl-5 text-sm">{recipe.ingredients.map((ingredient) => <li key={ingredient}>{ingredient}</li>)}</ul>
+                <ul className="list-disc pl-5 text-sm">{(recipe.ingredients ?? []).map((ingredient) => <li key={ingredient}>{ingredient}</li>)}</ul>
                 <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">Method</p>
-                <ol className="list-decimal pl-5 text-sm">{recipe.method.map((step) => <li key={step}>{step}</li>)}</ol>
+                <ol className="list-decimal pl-5 text-sm">{(recipe.method ?? []).map((step) => <li key={step}>{step}</li>)}</ol>
               </div>
             ))}
           </div>
