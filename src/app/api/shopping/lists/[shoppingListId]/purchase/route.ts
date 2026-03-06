@@ -9,7 +9,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ shoppingL
     data: { user },
   } = await supabaseServer.auth.getUser();
 
-  const supabase = createSupabaseAdminClient();
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createSupabaseAdminClient() : supabaseServer;
   const { data: list } = await supabase.from("shopping_lists").select("chef_user_id").eq("id", shoppingListId).single();
 
   if (user?.id && list?.chef_user_id && list.chef_user_id !== user.id) {

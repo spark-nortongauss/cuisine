@@ -32,6 +32,7 @@ function nowForDateTimeLocal() {
 export function GenerateMenuForm() {
   const [menus, setMenus] = useState<MenuOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(generateMenuSchema),
@@ -45,16 +46,30 @@ export function GenerateMenuForm() {
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
+    setRequestError(null);
     setIsLoading(true);
-    const res = await fetch("/api/generate-menu", { method: "POST", body: JSON.stringify(values) });
-    const data = await res.json();
-    if (!res.ok) {
-      form.setError("serveAt", { message: data?.error?.fieldErrors?.serveAt?.[0] ?? "Unable to generate menu" });
+    try {
+      const res = await fetch("/api/generate-menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        const serveAtError = data?.error?.fieldErrors?.serveAt?.[0];
+        if (serveAtError) {
+          form.setError("serveAt", { message: serveAtError });
+        }
+        setRequestError(data?.error?.message ?? data?.error ?? "Unable to generate menu. Please retry.");
+        return;
+      }
+
+      setMenus(Array.isArray(data.options) ? data.options : []);
+    } catch {
+      setRequestError("Network error while generating menu. Please retry.");
+    } finally {
       setIsLoading(false);
-      return;
     }
-    setMenus(data.options ?? []);
-    setIsLoading(false);
   });
 
   const selectedMealType = form.watch("mealType");
@@ -157,8 +172,9 @@ export function GenerateMenuForm() {
 
           <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
             <Sparkles size={16} />
-            {isLoading ? "Generating luxurious options..." : "Generate 3 curated options"}
+            {isLoading ? "Generating menus..." : "Generate menu"}
           </Button>
+          {requestError ? <p className="text-sm text-destructive">{requestError}</p> : null}
         </form>
       </Card>
 

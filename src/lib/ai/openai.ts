@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { GenerateMenuInput, MenuOption } from "@/types/domain";
+import { z } from "zod";
 
 let openAiClient: OpenAI | null = null;
 
@@ -17,8 +18,37 @@ async function requestStructuredJson<T>(prompt: string): Promise<T> {
   });
 
   const text = completion.output_text;
-  return JSON.parse(text) as T;
+  const normalized = text.trim();
+
+  try {
+    return JSON.parse(normalized) as T;
+  } catch {
+    const fencedMatch = normalized.match(/```json\s*([\s\S]*?)\s*```/i) ?? normalized.match(/```\s*([\s\S]*?)\s*```/i);
+    const candidate = fencedMatch?.[1]?.trim();
+    if (candidate) {
+      return JSON.parse(candidate) as T;
+    }
+    throw new Error("AI response was not valid JSON");
+  }
 }
+
+const dishSchema = z.object({
+  course: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  platingNotes: z.string().min(1),
+  beverageSuggestion: z.string().optional(),
+  imagePrompt: z.string().min(1),
+});
+
+const generatedMenuOptionSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  concept: z.string().min(1),
+  dishes: z.array(dishSchema),
+});
+
+const generatedMenuOptionsSchema = z.array(generatedMenuOptionSchema).length(3);
 
 export async function generateMichelinMenus(input: GenerateMenuInput): Promise<MenuOption[]> {
   const prompt = `Create exactly 3 premium menu options for a ${input.mealType} with ${input.courseCount} courses.
@@ -29,7 +59,8 @@ Chef notes: ${input.notes || "none"}.
 Return ONLY valid JSON array of exactly 3 objects with shape:
 [{"id":"option-1","title":"...","concept":"...","dishes":[{"course":"...","name":"...","description":"...","platingNotes":"...","beverageSuggestion":"...","imagePrompt":"high quality image prompt"}]}]`;
 
-  return requestStructuredJson<MenuOption[]>(prompt);
+  const parsed = await requestStructuredJson<unknown>(prompt);
+  return generatedMenuOptionsSchema.parse(parsed);
 }
 
 export type ShoppingListAiItem = {

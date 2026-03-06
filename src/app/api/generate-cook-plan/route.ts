@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabaseServer.auth.getUser();
 
-  const supabase = createSupabaseAdminClient();
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createSupabaseAdminClient() : supabaseServer;
   const { data: menuGeneration, error: generationError } = await supabase
     .from("menu_generations")
     .select("id, chef_user_id, request, selected_option, response")
