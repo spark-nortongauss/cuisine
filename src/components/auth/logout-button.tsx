@@ -15,7 +15,7 @@ export function LogoutButton() {
       type="button"
       variant="outline"
       size="sm"
-      className="gap-2"
+      className="gap-2 border-primary/20 bg-card/70"
       disabled={pending}
       onClick={() => {
         startTransition(async () => {

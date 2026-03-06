@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Lock, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { loginAction } from "./actions";
 import { LoginSubmitButton } from "./submit-button";
@@ -13,15 +14,17 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="next" value={nextPath ?? "/dashboard"} />
-      {state.error ? <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{state.error}</p> : null}
+      {state.error ? <p className="rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{state.error}</p> : null}
       <div className="space-y-2">
-        <label htmlFor="email" className="text-sm text-muted-foreground">
+        <label htmlFor="email" className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Mail size={14} />
           Email
         </label>
         <Input id="email" name="email" type="email" autoComplete="email" required />
       </div>
       <div className="space-y-2">
-        <label htmlFor="password" className="text-sm text-muted-foreground">
+        <label htmlFor="password" className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Lock size={14} />
           Password
         </label>
         <Input id="password" name="password" type="password" autoComplete="current-password" required />

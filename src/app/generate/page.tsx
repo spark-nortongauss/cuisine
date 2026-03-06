@@ -1,10 +1,16 @@
+import { PageTransition } from "@/components/layout/page-transition";
 import { GenerateMenuForm } from "@/components/modules/generate-menu-form";
+import { PageHero } from "@/components/ui/page-hero";
 
 export default function GeneratePage() {
   return (
-    <section className="space-y-4">
-      <h1 className="font-serif text-4xl">Generate Menu</h1>
+    <PageTransition>
+      <PageHero
+        eyebrow="Flagship Experience"
+        title="Generate an extraordinary Michelin-style service"
+        description="Combine context, constraints, and flavor direction to produce cinematic menu options for your next event."
+      />
       <GenerateMenuForm />
-    </section>
+    </PageTransition>
   );
 }
