@@ -1,11 +1,21 @@
 import { z } from "zod";
 
+const serviceDateTimeSchema = z.string().trim().min(1, "Please select a service date and time.").transform((value, ctx) => {
+  const normalized = value.includes("T") ? value : value.replace(" ", "T");
+  const asDate = new Date(normalized);
+  if (Number.isNaN(asDate.getTime())) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Service date and time is invalid." });
+    return z.NEVER;
+  }
+  return asDate.toISOString();
+});
+
 export const generateMenuSchema = z.object({
   courseCount: z.union([z.literal(3), z.literal(4), z.literal(5), z.literal(6)]),
   mealType: z.enum(["breakfast", "brunch", "lunch", "mid-afternoon", "dinner"]),
   restrictions: z.array(z.string()).default([]),
   notes: z.string().max(300).optional(),
-  serveAt: z.string().datetime(),
+  serveAt: serviceDateTimeSchema,
   inviteeCount: z.number().min(1).max(60),
 });
 
@@ -20,6 +30,6 @@ export const shareMenuSchema = z.object({
 });
 
 export const voteSchema = z.object({
-  optionId: z.string().uuid(),
+  optionId: z.string(),
   note: z.string().max(220).optional(),
 });
