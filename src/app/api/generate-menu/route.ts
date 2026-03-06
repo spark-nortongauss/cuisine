@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateMenuSchema } from "@/lib/schemas/menu";
 import { generateMichelinMenus } from "@/lib/ai/openai";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   const json = await request.json();
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   }
 
   const options = await generateMichelinMenus(parsed.data);
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   await supabase.from("menu_generations").insert({ request: parsed.data, response: options });
 
   return NextResponse.json({ options });

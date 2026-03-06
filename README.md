@@ -41,3 +41,16 @@ Premium mobile-first Next.js application for AI-assisted Michelin-like menu gene
 ## Asset placeholders
 This repository does **not** commit binary media assets by default.
 If you want curated hero dish photos, upload manually to Supabase Storage bucket `menu-assets` and store object paths in your menu records.
+
+## Authentication
+- Chef authentication uses Supabase Auth with cookie-based SSR clients via `@supabase/ssr`.
+- `middleware.ts` protects chef-only routes and redirects unauthenticated traffic to `/login`.
+- `/login` is the only auth UI entry point and supports email + password sign-in.
+- Authenticated chefs who visit `/login` are redirected to `/dashboard`.
+- Invitee token routes remain public: `/approval/[token]` and `/feedback/[token]`.
+- There is intentionally no sign-up route, form, or CTA in the app UI.
+
+### User provisioning policy
+- Chef users must be created manually by the owner in Supabase Auth (Dashboard or admin tooling).
+- Invitees are never created as login users and continue to interact via secure token links only.
+
