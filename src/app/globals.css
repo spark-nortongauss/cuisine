@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 38 37% 97%;
+  --foreground: 26 25% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 26 25% 14%;
+  --primary: 20 39% 21%;
+  --primary-foreground: 43 60% 95%;
+  --muted: 38 20% 92%;
+  --muted-foreground: 27 10% 40%;
+  --accent: 35 52% 82%;
+  --border: 30 24% 86%;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+}
+
+.luxury-shell {
+  background: radial-gradient(circle at top, rgba(190, 159, 114, 0.2), transparent 45%);
+}
