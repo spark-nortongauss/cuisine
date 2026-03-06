@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { generateShoppingListFromMenu, generateCookPlanFromMenu } from "@/lib/ai/openai";
-import { MenuOption } from "@/types/domain";
+import { fetchMenuWithOptions, normalizeMenuOptions } from "@/lib/menu-records";
 
 export async function POST(request: Request) {
-  const { menuGenerationId, selectedOptionId } = await request.json();
-  if (!menuGenerationId) {
-    return NextResponse.json({ error: "menuGenerationId is required" }, { status: 400 });
+  const { menuId, menuGenerationId, selectedOptionId } = await request.json();
+  const effectiveMenuId = menuId ?? menuGenerationId;
+
+  if (!effectiveMenuId) {
+    return NextResponse.json({ error: "menuId is required" }, { status: 400 });
   }
 
   const supabaseServer = await createSupabaseServerClient();
@@ -15,36 +17,31 @@ export async function POST(request: Request) {
   } = await supabaseServer.auth.getUser();
   const supabase = createSupabaseAdminClient();
 
-  const { data: generation, error } = await supabase
-    .from("menu_generations")
-    .select("id, chef_user_id, request, response")
-    .eq("id", menuGenerationId)
-    .single();
+  const { data: menu, error: menuError } = await fetchMenuWithOptions(effectiveMenuId);
 
-  if (error || !generation) return NextResponse.json({ error: error?.message ?? "Not found" }, { status: 404 });
-  if (user?.id && generation.chef_user_id && generation.chef_user_id !== user.id) {
+  if (menuError || !menu) return NextResponse.json({ error: menuError?.message ?? "Not found" }, { status: 404 });
+  if (user?.id && menu.chef_user_id && menu.chef_user_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const requestData = (generation.request ?? {}) as { inviteeCount?: number; mealType?: string; serveAt?: string };
-  const options = (generation.response ?? []) as MenuOption[];
+  const options = normalizeMenuOptions(menu.menu_options ?? []);
   const selected = options.find((option) => option.id === selectedOptionId) ?? options[0];
   if (!selected) return NextResponse.json({ error: "No generated option found" }, { status: 400 });
 
-  const shoppingItems = await generateShoppingListFromMenu(selected, requestData.inviteeCount ?? 4);
-  const cookPayload = await generateCookPlanFromMenu(selected, requestData.serveAt ?? new Date().toISOString());
+  const shoppingItems = await generateShoppingListFromMenu(selected, menu.invitee_count ?? 4);
+  const cookPayload = await generateCookPlanFromMenu(selected, menu.serve_at ?? new Date().toISOString());
 
   const { data: shoppingList, error: shoppingError } = await supabase
     .from("shopping_lists")
     .upsert(
       {
-        menu_generation_id: generation.id,
-        chef_user_id: generation.chef_user_id,
+        menu_id: menu.id,
+        chef_user_id: menu.chef_user_id,
         menu_title: selected.title,
-        meal_type: requestData.mealType ?? null,
-        serve_at: requestData.serveAt ?? new Date().toISOString(),
+        meal_type: menu.meal_type,
+        serve_at: menu.serve_at ?? new Date().toISOString(),
       },
-      { onConflict: "menu_generation_id" },
+      { onConflict: "menu_id" },
     )
     .select("id")
     .single();
@@ -55,7 +52,7 @@ export async function POST(request: Request) {
   const { error: itemError } = await supabase.from("shopping_items").insert(
     shoppingItems.map((item) => ({
       ...item,
-      menu_id: generation.id,
+      menu_id: menu.id,
       shopping_list_id: shoppingList.id,
     })),
   );
@@ -63,19 +60,17 @@ export async function POST(request: Request) {
 
   const { error: cookError } = await supabase.from("cook_plans").upsert(
     {
-      menu_generation_id: generation.id,
-      chef_user_id: generation.chef_user_id,
+      menu_id: menu.id,
+      chef_user_id: menu.chef_user_id,
       shopping_list_id: shoppingList.id,
       payload: cookPayload,
     },
-    { onConflict: "menu_generation_id" },
+    { onConflict: "menu_id" },
   );
   if (cookError) return NextResponse.json({ error: cookError.message }, { status: 500 });
 
-  await supabase
-    .from("menu_generations")
-    .update({ selected_option: selected, selected_option_id: selected.id, status: "validated" })
-    .eq("id", generation.id);
+  const { error: menuUpdateError } = await supabase.from("menus").update({ selected_option_id: selected.id, status: "validated" }).eq("id", menu.id);
+  if (menuUpdateError) return NextResponse.json({ error: menuUpdateError.message }, { status: 500 });
 
   return NextResponse.json({ ok: true, shoppingListId: shoppingList.id });
 }

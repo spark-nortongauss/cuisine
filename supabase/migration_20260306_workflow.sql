@@ -1,57 +1,51 @@
-alter table if exists menu_generations
-  add column if not exists chef_user_id uuid,
-  add column if not exists selected_option jsonb,
-  add column if not exists selected_option_id text,
-  add column if not exists status text not null default 'draft';
+-- Workflow migration: move from menu_generations to menus/menu_options/menu_dishes
 
-create table if not exists shopping_lists (
+create table if not exists menus (
   id uuid primary key default gen_random_uuid(),
-  menu_generation_id uuid not null references menu_generations(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   chef_user_id uuid,
   meal_type text,
-  menu_title text not null,
-  serve_at timestamptz not null,
-  status text not null default 'pending' check (status in ('pending', 'purchased')),
-  purchased_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(menu_generation_id)
+  course_count smallint,
+  restrictions jsonb not null default '[]'::jsonb,
+  notes text,
+  invitee_count integer,
+  serve_at timestamptz,
+  selected_option_id uuid,
+  status text not null default 'draft' check (status in ('draft', 'validated'))
 );
 
-alter table if exists shopping_items
-  add column if not exists shopping_list_id uuid references shopping_lists(id) on delete cascade,
-  add column if not exists created_at timestamptz not null default now();
-
-create index if not exists shopping_lists_chef_idx on shopping_lists(chef_user_id, serve_at desc);
-create index if not exists shopping_items_list_idx on shopping_items(shopping_list_id);
-
-create table if not exists cook_plans (
+create table if not exists menu_options (
   id uuid primary key default gen_random_uuid(),
-  menu_generation_id uuid not null references menu_generations(id) on delete cascade,
-  chef_user_id uuid,
-  shopping_list_id uuid references shopping_lists(id) on delete set null,
-  payload jsonb not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(menu_generation_id)
+  menu_id uuid not null references menus(id) on delete cascade,
+  title text not null,
+  concept text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
 );
 
-create index if not exists cook_plans_chef_idx on cook_plans(chef_user_id, created_at desc);
+create table if not exists menu_dishes (
+  id uuid primary key default gen_random_uuid(),
+  menu_id uuid not null references menus(id) on delete cascade,
+  menu_option_id uuid not null references menu_options(id) on delete cascade,
+  course text not null,
+  name text not null,
+  description text not null,
+  plating_notes text not null,
+  beverage_suggestion text,
+  image_prompt text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
 
-create or replace function set_updated_at_timestamp()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
+alter table if exists shopping_lists
+  add column if not exists menu_id uuid references menus(id) on delete cascade;
 
-drop trigger if exists set_shopping_lists_updated_at on shopping_lists;
-create trigger set_shopping_lists_updated_at
-before update on shopping_lists
-for each row execute function set_updated_at_timestamp();
+alter table if exists cook_plans
+  add column if not exists menu_id uuid references menus(id) on delete cascade;
 
-drop trigger if exists set_cook_plans_updated_at on cook_plans;
-create trigger set_cook_plans_updated_at
-before update on cook_plans
-for each row execute function set_updated_at_timestamp();
+alter table if exists shopping_lists
+  drop constraint if exists shopping_lists_menu_generation_id_key;
+
+create unique index if not exists shopping_lists_menu_id_key on shopping_lists(menu_id);
+create unique index if not exists cook_plans_menu_id_key on cook_plans(menu_id);

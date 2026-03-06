@@ -46,15 +46,23 @@ export function GenerateMenuForm() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     setIsLoading(true);
-    const res = await fetch("/api/generate-menu", { method: "POST", body: JSON.stringify(values) });
-    const data = await res.json();
-    if (!res.ok) {
-      form.setError("serveAt", { message: data?.error?.fieldErrors?.serveAt?.[0] ?? "Unable to generate menu" });
+    try {
+      const res = await fetch("/api/generate-menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        form.setError("serveAt", { message: data?.error?.fieldErrors?.serveAt?.[0] ?? data?.error ?? "Unable to generate menu" });
+        return;
+      }
+      setMenus(data.options ?? []);
+    } catch {
+      form.setError("serveAt", { message: "Unable to generate menu" });
+    } finally {
       setIsLoading(false);
-      return;
     }
-    setMenus(data.options ?? []);
-    setIsLoading(false);
   });
 
   const selectedMealType = form.watch("mealType");

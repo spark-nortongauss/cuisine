@@ -14,7 +14,7 @@ export default async function CookIndexPage() {
   const supabase = createSupabaseAdminClient();
   const { data: entries } = await supabase
     .from("shopping_lists")
-    .select("id, menu_generation_id, menu_title, serve_at, status")
+    .select("id, menu_id, menu_title, serve_at, status")
     .eq("chef_user_id", user?.id ?? "")
     .eq("status", "purchased")
     .order("serve_at", { ascending: false });
@@ -30,7 +30,7 @@ export default async function CookIndexPage() {
       <div className="space-y-3">
         {entries?.length ? (
           entries.map((entry) => (
-            <Link key={entry.id} href={`/cook/${entry.menu_generation_id}`} className="block">
+            <Link key={entry.id} href={`/cook/${entry.menu_id}`} className="block">
               <Card className="transition hover:-translate-y-0.5 hover:border-primary/30">
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="font-serif text-2xl">{entry.menu_title}</h2>
