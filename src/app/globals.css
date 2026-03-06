@@ -3,22 +3,89 @@
 @tailwind utilities;
 
 :root {
-  --background: 38 37% 97%;
-  --foreground: 26 25% 14%;
-  --card: 0 0% 100%;
-  --card-foreground: 26 25% 14%;
-  --primary: 20 39% 21%;
-  --primary-foreground: 43 60% 95%;
-  --muted: 38 20% 92%;
-  --muted-foreground: 27 10% 40%;
-  --accent: 35 52% 82%;
-  --border: 30 24% 86%;
+  --background: 35 32% 96%;
+  --foreground: 22 30% 14%;
+  --card: 37 39% 98%;
+  --card-foreground: 22 28% 16%;
+  --primary: 19 49% 23%;
+  --primary-foreground: 40 68% 96%;
+  --muted: 34 28% 90%;
+  --muted-foreground: 24 12% 39%;
+  --accent: 40 50% 69%;
+  --accent-foreground: 24 28% 16%;
+  --border: 32 24% 80%;
+  --destructive: 2 65% 46%;
+  --destructive-foreground: 40 68% 96%;
+  --success: 148 34% 34%;
+  --success-foreground: 40 68% 96%;
+  --warning: 34 75% 48%;
+}
+
+* {
+  @apply border-border;
 }
 
 body {
   @apply bg-background text-foreground antialiased;
+  background-image: radial-gradient(circle at 12% -20%, hsl(38 57% 77% / 0.44), transparent 40%),
+    radial-gradient(circle at 90% 0%, hsl(152 23% 71% / 0.24), transparent 34%),
+    linear-gradient(180deg, hsl(38 36% 97%), hsl(35 25% 94%));
+  min-height: 100vh;
 }
 
-.luxury-shell {
-  background: radial-gradient(circle at top, rgba(190, 159, 114, 0.2), transparent 45%);
+.luxury-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(72, 54, 40, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(72, 54, 40, 0.04) 1px, transparent 1px);
+  background-size: 120px 120px;
+  opacity: 0.2;
+  mask-image: radial-gradient(circle at 50% 35%, black, transparent 85%);
 }
+
+.grain-overlay {
+  position: relative;
+}
+
+.grain-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image: radial-gradient(circle, rgba(71, 52, 31, 0.2) 0.8px, transparent 0.8px);
+  background-size: 3px 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+.animate-accordion-down { animation: accordion-down 220ms ease-out; }
+.animate-accordion-up { animation: accordion-up 220ms ease-out; }

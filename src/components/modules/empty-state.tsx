@@ -1,11 +1,14 @@
 import { Inbox } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-border p-8 text-center">
-      <Inbox className="mx-auto mb-2 text-muted-foreground" size={18} />
-      <p className="font-medium">{title}</p>
-      <p className="text-sm text-muted-foreground">{description}</p>
-    </div>
+    <Card variant="muted" className="text-center">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-card">
+        <Inbox className="text-muted-foreground" size={20} />
+      </div>
+      <p className="font-serif text-2xl">{title}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+    </Card>
   );
 }
