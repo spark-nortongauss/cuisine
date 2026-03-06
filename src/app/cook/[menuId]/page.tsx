@@ -25,14 +25,14 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
   const { data: list } = await supabase
     .from("shopping_lists")
     .select("id, chef_user_id, menu_title, serve_at, status")
-    .eq("menu_generation_id", menuId)
+    .eq("menu_id", menuId)
     .eq("status", "purchased")
     .single();
 
   if (!list) return notFound();
   if (user?.id && list.chef_user_id && list.chef_user_id !== user.id) return notFound();
 
-  const { data: cookPlan } = await supabase.from("cook_plans").select("payload").eq("menu_generation_id", menuId).single();
+  const { data: cookPlan } = await supabase.from("cook_plans").select("payload").eq("menu_id", menuId).single();
   const payload = (cookPlan?.payload ?? {}) as CookPayload;
 
   return (
