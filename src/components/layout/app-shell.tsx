@@ -11,8 +11,8 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/generate", label: "Generate", icon: Sparkles },
   { href: "/approval", label: "Approval", icon: Vote },
-  { href: "/shopping/sample", label: "Shopping", icon: ListChecks },
-  { href: "/cook/sample", label: "Cook", icon: Timer },
+  { href: "/shopping", label: "Shopping", icon: ListChecks },
+  { href: "/cook", label: "Cook", icon: Timer },
   { href: "/favorites", label: "Favorites", icon: Heart },
 ];
 

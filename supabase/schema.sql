@@ -51,3 +51,38 @@ create table if not exists feedback (
 -- Example RLS starter
 alter table menu_generations enable row level security;
 create policy "chef owns records" on menu_generations for all using (auth.uid() is not null);
+
+alter table if exists menu_generations
+  add column if not exists chef_user_id uuid,
+  add column if not exists selected_option jsonb,
+  add column if not exists selected_option_id text,
+  add column if not exists status text not null default 'draft';
+
+create table if not exists shopping_lists (
+  id uuid primary key default gen_random_uuid(),
+  menu_generation_id uuid not null references menu_generations(id) on delete cascade,
+  chef_user_id uuid,
+  meal_type text,
+  menu_title text not null,
+  serve_at timestamptz not null,
+  status text not null default 'pending' check (status in ('pending', 'purchased')),
+  purchased_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(menu_generation_id)
+);
+
+alter table if exists shopping_items
+  add column if not exists shopping_list_id uuid references shopping_lists(id) on delete cascade,
+  add column if not exists created_at timestamptz not null default now();
+
+create table if not exists cook_plans (
+  id uuid primary key default gen_random_uuid(),
+  menu_generation_id uuid not null references menu_generations(id) on delete cascade,
+  chef_user_id uuid,
+  shopping_list_id uuid references shopping_lists(id) on delete set null,
+  payload jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(menu_generation_id)
+);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
@@ -19,21 +19,27 @@ import { cn } from "@/lib/utils";
 
 const restrictions = ["seafood", "shellfish", "gluten", "lactose", "peanuts", "tree nuts", "eggs", "soy", "sesame", "vegetarian", "vegan", "pork-free", "diabetes type 1", "diabetes type 2"];
 const mealTypes: FormValues["mealType"][] = ["breakfast", "brunch", "lunch", "mid-afternoon", "dinner"];
-
 const courseCounts: FormValues["courseCount"][] = [3, 4, 5, 6];
 
-type FormValues = z.infer<typeof generateMenuSchema>;
+type FormValues = z.input<typeof generateMenuSchema>;
+
+function nowForDateTimeLocal() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
 
 export function GenerateMenuForm() {
   const [menus, setMenus] = useState<MenuOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(generateMenuSchema),
     defaultValues: {
       courseCount: 4,
       mealType: "dinner",
       restrictions: [],
-      serveAt: new Date().toISOString(),
+      serveAt: nowForDateTimeLocal(),
       inviteeCount: 6,
     },
   });
@@ -42,6 +48,11 @@ export function GenerateMenuForm() {
     setIsLoading(true);
     const res = await fetch("/api/generate-menu", { method: "POST", body: JSON.stringify(values) });
     const data = await res.json();
+    if (!res.ok) {
+      form.setError("serveAt", { message: data?.error?.fieldErrors?.serveAt?.[0] ?? "Unable to generate menu" });
+      setIsLoading(false);
+      return;
+    }
     setMenus(data.options ?? []);
     setIsLoading(false);
   });
@@ -49,6 +60,13 @@ export function GenerateMenuForm() {
   const selectedMealType = form.watch("mealType");
   const selectedCourseCount = form.watch("courseCount");
   const selectedRestrictions = form.watch("restrictions") ?? [];
+  const selectedServiceTime = form.watch("serveAt");
+  const servicePreview = useMemo(() => {
+    if (!selectedServiceTime) return "";
+    const parsed = new Date(selectedServiceTime);
+    if (Number.isNaN(parsed.getTime())) return "";
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(parsed);
+  }, [selectedServiceTime]);
 
   return (
     <div className="space-y-5">
@@ -105,6 +123,8 @@ export function GenerateMenuForm() {
             <label className="space-y-2">
               <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><CalendarClock size={14} />Service Time</span>
               <Input type="datetime-local" {...form.register("serveAt")} />
+              {servicePreview ? <p className="text-xs text-muted-foreground">Scheduled for {servicePreview}</p> : null}
+              {form.formState.errors.serveAt ? <p className="text-xs text-destructive">{form.formState.errors.serveAt.message}</p> : null}
             </label>
           </div>
 
