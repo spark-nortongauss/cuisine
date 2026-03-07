@@ -23,10 +23,32 @@ const courseCounts: FormValues["courseCount"][] = [3, 4, 5, 6];
 
 type FormValues = z.input<typeof generateMenuSchema>;
 
+type GenerateMenuApiResponse = {
+  success?: boolean;
+  menuId?: string;
+  options?: MenuOption[];
+  error?: string | { fieldErrors?: Record<string, string[]> };
+  code?: string;
+};
+
 function nowForDateTimeLocal() {
   const now = new Date();
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 16);
+}
+
+function resolveGenerateErrorMessage(payload: GenerateMenuApiResponse, status: number) {
+  const code = payload.code;
+  if (payload.error && typeof payload.error === "string") {
+    const suffix = process.env.NODE_ENV === "development" && code ? ` (${code})` : "";
+    return `Unable to generate menu. ${payload.error}${suffix}`;
+  }
+
+  const serveAtError = typeof payload.error === "object" ? payload.error?.fieldErrors?.serveAt?.[0] : undefined;
+  if (serveAtError) return serveAtError;
+
+  if (status === 400) return "Unable to generate menu. Please check your menu inputs and try again.";
+  return "Unable to generate menu. Please try again.";
 }
 
 export function GenerateMenuForm() {
@@ -46,20 +68,27 @@ export function GenerateMenuForm() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     setIsLoading(true);
+    form.clearErrors("serveAt");
+
     try {
       const res = await fetch("/api/generate-menu", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        form.setError("serveAt", { message: data?.error?.fieldErrors?.serveAt?.[0] ?? data?.error ?? "Unable to generate menu" });
+
+      const data = (await res.json()) as GenerateMenuApiResponse;
+
+      if (!res.ok || !data.success) {
+        form.setError("serveAt", { message: resolveGenerateErrorMessage(data, res.status) });
         return;
       }
+
       setMenus(data.options ?? []);
-    } catch {
-      form.setError("serveAt", { message: "Unable to generate menu" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected network error";
+      const suffix = process.env.NODE_ENV === "development" ? ` (${message})` : "";
+      form.setError("serveAt", { message: `Unable to generate menu. Please retry.${suffix}` });
     } finally {
       setIsLoading(false);
     }

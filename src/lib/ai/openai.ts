@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { GenerateMenuInput, MenuOption } from "@/types/domain";
+import { z } from "zod";
 
 let openAiClient: OpenAI | null = null;
 
@@ -14,11 +15,36 @@ async function requestStructuredJson<T>(prompt: string): Promise<T> {
   const completion = await getOpenAiClient().responses.create({
     model: "gpt-4.1-mini",
     input: prompt,
+    text: {
+      format: {
+        type: "json_object",
+      },
+    },
   });
 
   const text = completion.output_text;
   return JSON.parse(text) as T;
 }
+
+const dishSchema = z.object({
+  course: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  platingNotes: z.string().min(1),
+  beverageSuggestion: z.string().min(1).optional(),
+  imagePrompt: z.string().min(1),
+});
+
+const menuOptionSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  concept: z.string().min(1),
+  dishes: z.array(dishSchema).min(1),
+});
+
+const menuGenerationSchema = z.object({
+  options: z.array(menuOptionSchema).length(3),
+});
 
 export async function generateMichelinMenus(input: GenerateMenuInput): Promise<MenuOption[]> {
   const prompt = `Create exactly 3 premium menu options for a ${input.mealType} with ${input.courseCount} courses.
@@ -26,10 +52,13 @@ Restrictions: ${input.restrictions.join(", ") || "none"}.
 Service date/time: ${input.serveAt}.
 Guest count: ${input.inviteeCount}.
 Chef notes: ${input.notes || "none"}.
-Return ONLY valid JSON array of exactly 3 objects with shape:
-[{"id":"option-1","title":"...","concept":"...","dishes":[{"course":"...","name":"...","description":"...","platingNotes":"...","beverageSuggestion":"...","imagePrompt":"high quality image prompt"}]}]`;
+Return ONLY valid JSON object with this shape:
+{"options":[{"id":"option-1","title":"...","concept":"...","dishes":[{"course":"...","name":"...","description":"...","platingNotes":"...","beverageSuggestion":"...","imagePrompt":"high quality image prompt"}]}]}
+Ensure "options" contains exactly 3 menu options.`;
 
-  return requestStructuredJson<MenuOption[]>(prompt);
+  const payload = await requestStructuredJson<{ options?: unknown } | MenuOption[]>(prompt);
+  const options = Array.isArray(payload) ? payload : payload.options;
+  return menuGenerationSchema.parse({ options }).options;
 }
 
 export type ShoppingListAiItem = {

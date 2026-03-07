@@ -1,99 +1,217 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 import { generateMenuSchema } from "@/lib/schemas/menu";
 import { generateMichelinMenus } from "@/lib/ai/openai";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeMenuOptions } from "@/lib/menu-records";
 
+type GenerateMenuSuccessResponse = {
+  success: true;
+  menuId: string;
+  menuGenerationId: string;
+  options: ReturnType<typeof normalizeMenuOptions>;
+};
+
+type GenerateMenuErrorResponse = {
+  success: false;
+  error: string;
+  code: string;
+};
+
+function summarizeError(error: unknown) {
+  if (error instanceof ZodError) {
+    return {
+      message: "Validation failed",
+      details: error.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message })),
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+
+  return {
+    message: String(error),
+  };
+}
+
+function jsonError(status: number, code: string, error: string) {
+  return NextResponse.json<GenerateMenuErrorResponse>({ success: false, code, error }, { status });
+}
+
 export async function POST(request: Request) {
-  const json = await request.json();
-  const parsed = generateMenuSchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  console.info("[generate-menu] request received");
 
-  const supabaseServer = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabaseServer.auth.getUser();
+  try {
+    const json = await request.json();
+    const parsed = generateMenuSchema.safeParse(json);
 
-  const options = await generateMichelinMenus(parsed.data);
-  const supabase = createSupabaseAdminClient();
+    if (!parsed.success) {
+      console.warn("[generate-menu] input validation failed", {
+        fieldErrors: parsed.error.flatten().fieldErrors,
+      });
+      return jsonError(400, "VALIDATION_ERROR", "Invalid menu generation input.");
+    }
 
-  const { data: menu, error: menuError } = await supabase
-    .from("menus")
-    .insert({
-      chef_user_id: user?.id ?? null,
-      meal_type: parsed.data.mealType,
-      course_count: parsed.data.courseCount,
-      restrictions: parsed.data.restrictions,
-      notes: parsed.data.notes ?? null,
-      serve_at: parsed.data.serveAt,
-      invitee_count: parsed.data.inviteeCount,
-      status: "draft",
-    })
-    .select("id")
-    .single();
+    const payload = parsed.data;
+    console.info("[generate-menu] validated payload", {
+      mealType: payload.mealType,
+      courseCount: payload.courseCount,
+      inviteeCount: payload.inviteeCount,
+      serveAt: payload.serveAt,
+      restrictionsCount: payload.restrictions.length,
+      hasNotes: Boolean(payload.notes?.trim()),
+    });
 
-  if (menuError || !menu) {
-    return NextResponse.json({ error: menuError?.message ?? "Failed to create menu" }, { status: 500 });
-  }
+    const supabaseServer = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabaseServer.auth.getUser();
 
-  const optionRows = options.map((option, index) => ({
-    menu_id: menu.id,
-    title: option.title,
-    concept: option.concept,
-    sort_order: index,
-  }));
+    const supabase = createSupabaseAdminClient();
 
-  const { data: insertedOptions, error: optionError } = await supabase
-    .from("menu_options")
-    .insert(optionRows)
-    .select("id, title, concept, sort_order");
+    console.info("[generate-menu] menus insert start");
+    const { data: menu, error: menuError } = await supabase
+      .from("menus")
+      .insert({
+        chef_user_id: user?.id ?? null,
+        meal_type: payload.mealType,
+        course_count: payload.courseCount,
+        restrictions: payload.restrictions,
+        notes: payload.notes ?? null,
+        serve_at: payload.serveAt,
+        invitee_count: payload.inviteeCount,
+        status: "draft",
+      })
+      .select("id")
+      .single();
 
-  if (optionError || !insertedOptions?.length) {
-    await supabase.from("menus").delete().eq("id", menu.id);
-    return NextResponse.json({ error: optionError?.message ?? "Failed to create menu options" }, { status: 500 });
-  }
+    if (menuError || !menu) {
+      console.error("[generate-menu] menus insert failed", {
+        message: menuError?.message,
+        code: menuError?.code,
+        details: menuError?.details,
+      });
+      return jsonError(500, "MENU_INSERT_FAILED", menuError?.message ?? "Failed to create menu.");
+    }
+    console.info("[generate-menu] menus insert end", { menuId: menu.id });
 
-  const optionByIndex = [...insertedOptions].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    let options: Awaited<ReturnType<typeof generateMichelinMenus>>;
 
-  const dishRows = optionByIndex.flatMap((insertedOption, optionIndex) => {
-    const sourceDishes = options[optionIndex]?.dishes ?? [];
-    return sourceDishes.map((dish, dishIndex) => ({
+    try {
+      console.info("[generate-menu] response parsing start");
+      console.info("[generate-menu] OpenAI request start", {
+        mealType: payload.mealType,
+        courseCount: payload.courseCount,
+      });
+      options = await generateMichelinMenus(payload);
+      console.info("[generate-menu] OpenAI response received", { optionCount: options.length });
+      console.info("[generate-menu] response parsing end", {
+        optionCount: options.length,
+        dishCounts: options.map((option) => option.dishes.length),
+      });
+    } catch (error) {
+      console.error("[generate-menu] OpenAI/parsing failed", summarizeError(error));
+      await supabase.from("menus").delete().eq("id", menu.id);
+
+      const isSchemaError = error instanceof ZodError;
+      return jsonError(
+        502,
+        isSchemaError ? "OPENAI_RESPONSE_PARSE_FAILED" : "OPENAI_GENERATION_FAILED",
+        isSchemaError
+          ? "The menu structure returned by AI could not be parsed."
+          : "Menu generation failed while contacting AI service.",
+      );
+    }
+
+    const optionRows = options.map((option, index) => ({
       menu_id: menu.id,
-      menu_option_id: insertedOption.id,
-      course: dish.course,
-      name: dish.name,
-      description: dish.description,
-      plating_notes: dish.platingNotes,
-      beverage_suggestion: dish.beverageSuggestion ?? null,
-      image_prompt: dish.imagePrompt,
-      sort_order: dishIndex,
-    }));
-  });
-
-  const { error: dishError } = await supabase.from("menu_dishes").insert(dishRows);
-  if (dishError) {
-    await supabase.from("menu_options").delete().eq("menu_id", menu.id);
-    await supabase.from("menus").delete().eq("id", menu.id);
-    return NextResponse.json({ error: dishError.message }, { status: 500 });
-  }
-
-  const normalizedOptions = normalizeMenuOptions(
-    optionByIndex.map((option, optionIndex) => ({
-      id: option.id,
       title: option.title,
       concept: option.concept,
-      menu_dishes: (options[optionIndex]?.dishes ?? []).map((dish) => ({
+      sort_order: index,
+    }));
+
+    console.info("[generate-menu] menu_options insert start", { rowCount: optionRows.length });
+    const { data: insertedOptions, error: optionError } = await supabase
+      .from("menu_options")
+      .insert(optionRows)
+      .select("id, title, concept, sort_order");
+
+    if (optionError || !insertedOptions?.length) {
+      console.error("[generate-menu] menu_options insert failed", {
+        message: optionError?.message,
+        code: optionError?.code,
+        details: optionError?.details,
+      });
+      await supabase.from("menus").delete().eq("id", menu.id);
+      return jsonError(500, "MENU_OPTIONS_INSERT_FAILED", optionError?.message ?? "Failed to create menu options.");
+    }
+    console.info("[generate-menu] menu_options insert end", { rowCount: insertedOptions.length });
+
+    const optionByIndex = [...insertedOptions].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+    const dishRows = optionByIndex.flatMap((insertedOption, optionIndex) => {
+      const sourceDishes = options[optionIndex]?.dishes ?? [];
+      return sourceDishes.map((dish, dishIndex) => ({
+        menu_id: menu.id,
+        menu_option_id: insertedOption.id,
         course: dish.course,
         name: dish.name,
         description: dish.description,
         plating_notes: dish.platingNotes,
         beverage_suggestion: dish.beverageSuggestion ?? null,
         image_prompt: dish.imagePrompt,
-      })),
-    })),
-  );
+        sort_order: dishIndex,
+      }));
+    });
 
-  return NextResponse.json({ options: normalizedOptions, menuId: menu.id, menuGenerationId: menu.id });
+    console.info("[generate-menu] menu_dishes insert start", { rowCount: dishRows.length });
+    const { error: dishError } = await supabase.from("menu_dishes").insert(dishRows);
+
+    if (dishError) {
+      console.error("[generate-menu] menu_dishes insert failed", {
+        message: dishError.message,
+        code: dishError.code,
+        details: dishError.details,
+      });
+      await supabase.from("menu_options").delete().eq("menu_id", menu.id);
+      await supabase.from("menus").delete().eq("id", menu.id);
+      return jsonError(500, "MENU_DISHES_INSERT_FAILED", dishError.message);
+    }
+    console.info("[generate-menu] menu_dishes insert end");
+
+    const normalizedOptions = normalizeMenuOptions(
+      optionByIndex.map((option, optionIndex) => ({
+        id: option.id,
+        title: option.title,
+        concept: option.concept,
+        menu_dishes: (options[optionIndex]?.dishes ?? []).map((dish) => ({
+          course: dish.course,
+          name: dish.name,
+          description: dish.description,
+          plating_notes: dish.platingNotes,
+          beverage_suggestion: dish.beverageSuggestion ?? null,
+          image_prompt: dish.imagePrompt,
+        })),
+      })),
+    );
+
+    const response: GenerateMenuSuccessResponse = {
+      success: true,
+      menuId: menu.id,
+      menuGenerationId: menu.id,
+      options: normalizedOptions,
+    };
+    console.info("[generate-menu] final response returned", {
+      menuId: menu.id,
+      optionCount: response.options.length,
+    });
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error("[generate-menu] caught exception", summarizeError(error));
+    return jsonError(500, "UNEXPECTED_ERROR", "Unexpected server error while generating menu.");
+  }
 }
