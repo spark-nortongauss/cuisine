@@ -88,7 +88,7 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
               <div key={step.id} className="rounded-xl border border-border/60 bg-card/70 p-4">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <Badge variant="accent">{step.relative_minutes !== null ? `T${step.relative_minutes >= 0 ? "+" : ""}${step.relative_minutes} min` : `${t("cook.step")} ${step.step_no}`}</Badge>
-                  <Badge variant="outline">{step.phase}</Badge>
+                  <Badge variant="default">{step.phase}</Badge>
                   {step.dish_name ? <Badge variant="success">{t("cook.dish")}: {step.dish_name}</Badge> : null}
                 </div>
                 <p className="font-medium text-foreground">{step.title}</p>
