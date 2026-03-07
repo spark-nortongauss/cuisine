@@ -16,7 +16,7 @@ export async function generateCookPlanForMenu({
 
   const { data: menu, error: menuError } = await supabase
     .from("menus")
-    .select("id, owner_id, title, serve_at, approved_option_id, menu_options(id, title, michelin_name, concept_summary, concept, sort_order, option_no, menu_dishes(course_no, course_label, dish_name, description, plating_notes, decoration_notes))")
+    .select("id, owner_id, title, serve_at, approved_option_id, menu_options(id, title, michelin_name, concept_summary, concept, sort_order, option_no, hero_image_path, hero_image_prompt, menu_dishes(course_no, course_label, dish_name, description, plating_notes, decoration_notes, image_prompt, image_path))")
     .eq("id", menuId)
     .maybeSingle();
 
