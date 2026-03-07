@@ -5,6 +5,12 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 
+type MenuOption = {
+  id: number;
+  title: string | null;
+  michelin_name: string | null;
+};
+
 export default async function CookIndexPage() {
   const supabaseServer = await createSupabaseServerClient();
   const {
@@ -46,7 +52,7 @@ export default async function CookIndexPage() {
               <tbody>
                 {visibleEntries.map((entry) => {
                   const menu = Array.isArray(entry.menus) ? entry.menus[0] : entry.menus;
-                  const approvedOption = (menu?.menu_options ?? []).find((option) => option.id === menu?.approved_option_id) ?? null;
+                  const approvedOption = (menu?.menu_options ?? []).find((option: MenuOption) => option.id === menu?.approved_option_id) ?? null;
                   return (
                     <tr key={entry.id} className="rounded-2xl border border-border/60 bg-card/70">
                       <td className="px-3 py-3 font-medium text-primary underline-offset-4 hover:underline">
