@@ -48,7 +48,7 @@ const menuGenerationSchema = z.object({
 });
 
 export async function generateMichelinMenus(input: GenerateMenuInput): Promise<MenuOption[]> {
-  const inviteeContext = input.inviteePreferences?.length
+  const inviteeContext = input.inviteePreferences.length
     ? input.inviteePreferences
         .map((invitee) => `${invitee.label}${invitee.name ? ` (${invitee.name})` : ""}: ${invitee.restrictions.join(", ") || "none"}`)
         .join("; ")

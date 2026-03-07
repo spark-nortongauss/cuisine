@@ -56,11 +56,11 @@ export async function POST(request: Request) {
     }
 
     const payload = parsed.data;
-    const inviteePreferences = payload.inviteePreferences?.slice(0, payload.inviteeCount) ?? [];
+    const inviteePreferences = payload.inviteePreferences.slice(0, payload.inviteeCount);
     const aggregateRestrictions = Array.from(
       new Set([
         ...payload.restrictions,
-        ...inviteePreferences.flatMap((invitee) => invitee.restrictions ?? []),
+        ...inviteePreferences.flatMap((invitee) => invitee.restrictions),
       ]),
     );
 

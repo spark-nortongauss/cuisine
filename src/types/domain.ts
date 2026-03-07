@@ -13,7 +13,7 @@ export interface GenerateMenuInput {
   notes?: string;
   serveAt: string;
   inviteeCount: number;
-  inviteePreferences?: InviteePreference[];
+  inviteePreferences: InviteePreference[];
 }
 
 export interface Dish {

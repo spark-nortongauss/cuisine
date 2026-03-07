@@ -22,6 +22,7 @@ const mealTypes: FormValues["mealType"][] = ["breakfast", "brunch", "lunch", "mi
 const courseCounts: FormValues["courseCount"][] = [3, 4, 5, 6];
 
 type FormValues = z.input<typeof generateMenuSchema>;
+type InviteePreferenceInput = NonNullable<FormValues["inviteePreferences"]>[number];
 
 type GenerateMenuApiResponse = {
   success?: boolean;
@@ -51,6 +52,14 @@ function resolveGenerateErrorMessage(payload: GenerateMenuApiResponse, status: n
   return "Unable to generate menu. Please try again.";
 }
 
+function normalizeInviteePreference(invitee: InviteePreferenceInput | undefined, index: number): InviteePreferenceInput {
+  return {
+    label: invitee?.label?.trim() || `Individual ${index + 1}`,
+    name: invitee?.name ?? "",
+    restrictions: Array.isArray(invitee?.restrictions) ? invitee.restrictions : [],
+  };
+}
+
 export function GenerateMenuForm() {
   const [menus, setMenus] = useState<MenuOption[]>([]);
   const [menuId, setMenuId] = useState<string | null>(null);
@@ -66,7 +75,7 @@ export function GenerateMenuForm() {
       restrictions: [],
       serveAt: nowForDateTimeLocal(),
       inviteeCount: 6,
-      inviteePreferences: Array.from({ length: 6 }, (_, index) => ({ label: `Individual ${index + 1}`, name: "", restrictions: [] })),
+      inviteePreferences: Array.from({ length: 6 }, (_, index) => normalizeInviteePreference(undefined, index)),
     },
   });
 
@@ -75,14 +84,7 @@ export function GenerateMenuForm() {
 
   useEffect(() => {
     const safeCount = Math.min(60, Math.max(1, inviteeCount || 1));
-    const nextPreferences = Array.from({ length: safeCount }, (_, index) => {
-      const existing = inviteePreferences[index];
-      return {
-        label: existing?.label?.trim() || `Individual ${index + 1}`,
-        name: existing?.name ?? "",
-        restrictions: existing?.restrictions ?? [],
-      };
-    });
+    const nextPreferences = Array.from({ length: safeCount }, (_, index) => normalizeInviteePreference(inviteePreferences[index], index));
 
     form.setValue("inviteePreferences", nextPreferences, { shouldDirty: true });
 
@@ -95,11 +97,15 @@ export function GenerateMenuForm() {
     form.clearErrors("serveAt");
 
     try {
-      const sanitizedPreferences = (values.inviteePreferences ?? []).slice(0, values.inviteeCount).map((invitee, index) => ({
-        label: invitee.label?.trim() || `Individual ${index + 1}`,
-        name: invitee.name?.trim() || null,
-        restrictions: invitee.restrictions ?? [],
-      }));
+      const sanitizedPreferences = (values.inviteePreferences ?? [])
+        .slice(0, values.inviteeCount)
+        .map((invitee, index) => {
+          const normalized = normalizeInviteePreference(invitee, index);
+          return {
+            ...normalized,
+            name: normalized.name?.trim() || null,
+          };
+        });
       const aggregate = Array.from(new Set(sanitizedPreferences.flatMap((invitee) => invitee.restrictions ?? [])));
 
       const res = await fetch("/api/generate-menu", {
@@ -249,7 +255,7 @@ export function GenerateMenuForm() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {restrictionOptions.map((item) => {
-                      const selected = invitee.restrictions.includes(item);
+                      const selected = (invitee.restrictions ?? []).includes(item);
                       return (
                         <button
                           type="button"
