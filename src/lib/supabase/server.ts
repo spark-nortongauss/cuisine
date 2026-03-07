@@ -1,6 +1,7 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient } from "@/lib/supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import type { Database } from "@/lib/supabase/database.types";
 
 export async function createSupabaseServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -34,5 +35,5 @@ export function createSupabaseAdminClient() {
     throw new Error("Missing Supabase admin configuration");
   }
 
-  return createClient(supabaseUrl, serviceRole, { auth: { persistSession: false } });
+  return createClient<Database>(supabaseUrl, serviceRole, { auth: { persistSession: false } });
 }

@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/database.types";
 
 type CookieMethods = {
   getAll: () => { name: string; value: string }[];
@@ -9,12 +10,12 @@ type ServerClientOptions = {
   cookies: CookieMethods;
 };
 
-export function createBrowserClient(supabaseUrl: string, supabaseKey: string): SupabaseClient {
-  return createClient(supabaseUrl, supabaseKey);
+export function createBrowserClient(supabaseUrl: string, supabaseKey: string): SupabaseClient<Database> {
+  return createClient<Database>(supabaseUrl, supabaseKey);
 }
 
-export function createServerClient(supabaseUrl: string, supabaseKey: string, options: ServerClientOptions): SupabaseClient {
-  return createClient(supabaseUrl, supabaseKey, {
+export function createServerClient(supabaseUrl: string, supabaseKey: string, options: ServerClientOptions): SupabaseClient<Database> {
+  return createClient<Database>(supabaseUrl, supabaseKey, {
     auth: {
       flowType: "pkce",
       autoRefreshToken: false,
