@@ -4,6 +4,7 @@ import { PageHero } from "@/components/ui/page-hero";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { ShoppingListDetail } from "@/components/modules/shopping-list-detail";
 import { Card } from "@/components/ui/card";
+import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 
 export default async function ShoppingDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -17,7 +18,7 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
 
   const { data: menu } = await supabase
     .from("menus")
-    .select("id, owner_id, title, meal_type, serve_at, invitee_count, restrictions")
+    .select("id, owner_id, title, meal_type, serve_at, invitee_count, restrictions, approved_option_id, menu_options(id, title, michelin_name)")
     .eq("id", menuId)
     .single();
 
@@ -26,7 +27,8 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
 
   const { data: shoppingList } = await supabase.from("shopping_lists").select("id").eq("menu_id", menuId).maybeSingle();
 
-  const title = menu.title ?? "Shopping List";
+  const approvedOption = (menu.menu_options ?? []).find((option) => option.id === menu.approved_option_id) ?? null;
+  const title = resolveMenuDisplayTitle(menu, approvedOption);
   const subtitle = `${menu.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}${menu.meal_type ? ` · ${menu.meal_type}` : ""}`;
 
   if (!shoppingList) {
@@ -54,7 +56,7 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
         <p className="mt-2 text-sm">Invitees: {menu.invitee_count ?? "-"}</p>
         <p className="text-sm">Restrictions: {menu.restrictions?.length ? menu.restrictions.join(", ") : "None"}</p>
       </Card>
-      <ShoppingListDetail initialItems={items ?? []} />
+      <ShoppingListDetail menuId={menu.id} initialItems={items ?? []} />
     </PageTransition>
   );
 }

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 
 export default async function FavoritesPage() {
   const supabaseServer = await createSupabaseServerClient();
@@ -15,7 +16,7 @@ export default async function FavoritesPage() {
   const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("menu_favorites")
-    .select("menu_id, rating_percent, people_count, served_on, menus(title, meal_type)")
+    .select("menu_id, rating_percent, people_count, served_on, menus(title, meal_type, approved_option_id, menu_options(id, title, michelin_name))")
     .eq("owner_id", user?.id ?? "")
     .order("created_at", { ascending: false });
 
@@ -36,7 +37,7 @@ export default async function FavoritesPage() {
                   <div className="grid gap-4 md:grid-cols-[1.2fr_1fr] md:items-center">
                     <div className="space-y-2">
                       <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{menu?.meal_type ?? "Service"}</p>
-                      <h2 className="font-serif text-3xl">{menu?.title ?? "Untitled menu"}</h2>
+                      <h2 className="font-serif text-3xl">{resolveMenuDisplayTitle(menu, (menu?.menu_options ?? []).find((option) => option.id === menu?.approved_option_id) ?? null)}</h2>
                       <p className="text-sm text-muted-foreground">{favorite.people_count ?? "-"} people · {favorite.served_on ?? "unspecified date"}</p>
                     </div>
                     <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-muted/30 to-card p-4">

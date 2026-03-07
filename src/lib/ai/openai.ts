@@ -84,12 +84,29 @@ Use nullable quantity/unit/note when unknown.`;
   return z.array(shoppingItemAiSchema).parse(payload.items ?? []);
 }
 
-export async function generateCookPlanFromMenu(menuOption: MenuOption, serveAtIso: string): Promise<CookPlanPayload> {
+export async function generateCookPlanFromMenu(
+  menuOption: MenuOption,
+  serveAtIso: string,
+  shoppingItems: Array<{
+    section: string | null;
+    item_name: string | null;
+    quantity: number | null;
+    unit: string | null;
+    note: string | null;
+    purchased: boolean | null;
+  }> = [],
+): Promise<CookPlanPayload> {
+  const shoppingContext = shoppingItems.length
+    ? `Shopping list context: ${JSON.stringify(shoppingItems)}.`
+    : "Shopping list context: none provided.";
+
   const prompt = `Create an execution-grade cook plan for this menu and service time ${serveAtIso}:
 ${JSON.stringify(formatMenuOptionForAi(menuOption))}
+${shoppingContext}
 Return ONLY JSON with keys:
 overview, mise_en_place, plating_overview, service_notes, steps.
-steps must be an array of objects with: step_no(integer), phase, title, details, dish_name(optional), relative_minutes(optional integer).`;
+steps must be an array of objects with: step_no(integer), phase, title, details, dish_name(optional), relative_minutes(optional integer).
+Ensure timeline begins with prep and ends at service/plating, with practical operational detail.`;
 
   const payload = await requestStructuredJson<unknown>(prompt);
   return cookPlanAiSchema.parse(payload);

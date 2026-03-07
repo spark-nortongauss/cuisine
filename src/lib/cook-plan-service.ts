@@ -1,0 +1,129 @@
+import { generateCookPlanFromMenu } from "@/lib/ai/openai";
+import { normalizeMenuOptions } from "@/lib/menu-records";
+import { resolveCanonicalMenuTitleFromOption } from "@/lib/menu-display";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
+
+export async function generateCookPlanForMenu({
+  menuId,
+  ownerId,
+  selectedOptionId,
+}: {
+  menuId: string;
+  ownerId: string;
+  selectedOptionId?: string | null;
+}) {
+  const supabase = createSupabaseAdminClient();
+
+  const { data: menu, error: menuError } = await supabase
+    .from("menus")
+    .select("id, owner_id, title, serve_at, approved_option_id, menu_options(id, title, michelin_name, concept_summary, concept, sort_order, option_no, menu_dishes(course_no, course_label, dish_name, description, plating_notes, decoration_notes))")
+    .eq("id", menuId)
+    .maybeSingle();
+
+  if (menuError || !menu) {
+    return { success: false as const, status: 404, code: "MENU_NOT_FOUND", error: menuError?.message ?? "Menu not found" };
+  }
+
+  if (menu.owner_id !== ownerId) {
+    return { success: false as const, status: 403, code: "FORBIDDEN", error: "Forbidden" };
+  }
+
+  const options = normalizeMenuOptions(menu.menu_options ?? []);
+  const selected = options.find((option) => option.id === selectedOptionId) ?? options.find((option) => option.id === menu.approved_option_id) ?? options[0] ?? null;
+
+  if (!selected) {
+    return { success: false as const, status: 400, code: "NO_OPTION", error: "No menu option available" };
+  }
+
+  const canonicalTitle = resolveCanonicalMenuTitleFromOption({ title: selected.title });
+
+  const { data: shoppingList } = await supabase.from("shopping_lists").select("id").eq("menu_id", menu.id).maybeSingle();
+
+  const { data: shoppingItems } = shoppingList
+    ? await supabase
+      .from("shopping_items")
+      .select("section, item_name, quantity, unit, note, purchased")
+      .eq("shopping_list_id", shoppingList.id)
+    : { data: [] as Array<{ section: string | null; item_name: string | null; quantity: number | null; unit: string | null; note: string | null; purchased: boolean | null }> };
+
+  const payload = await generateCookPlanFromMenu(
+    selected,
+    menu.serve_at ?? new Date().toISOString(),
+    (shoppingItems ?? []).map((item) => ({
+      section: item.section,
+      item_name: item.item_name,
+      quantity: item.quantity,
+      unit: item.unit,
+      note: item.note,
+      purchased: item.purchased,
+    })),
+  );
+
+  const { data: cookPlan, error: cookPlanError } = await supabase
+    .from("cook_plans")
+    .upsert(
+      {
+        menu_id: menu.id,
+        overview: payload.overview,
+        mise_en_place: payload.mise_en_place,
+        plating_overview: payload.plating_overview,
+        service_notes: payload.service_notes,
+      },
+      { onConflict: "menu_id" },
+    )
+    .select("id")
+    .single();
+
+  if (cookPlanError || !cookPlan) {
+    return {
+      success: false as const,
+      status: 500,
+      code: "COOK_PLAN_UPSERT_FAILED",
+      error: cookPlanError?.message ?? "Failed to upsert cook plan",
+    };
+  }
+
+  const { error: deleteError } = await supabase.from("cook_steps").delete().eq("cook_plan_id", cookPlan.id);
+  if (deleteError) {
+    return { success: false as const, status: 500, code: "COOK_STEPS_DELETE_FAILED", error: deleteError.message };
+  }
+
+  const { error: insertError } = await supabase.from("cook_steps").insert(
+    payload.steps.map((step, index) => ({
+      cook_plan_id: cookPlan.id,
+      step_no: step.step_no || index + 1,
+      phase: step.phase,
+      title: step.title,
+      details: step.details,
+      dish_name: step.dish_name ?? null,
+      relative_minutes: step.relative_minutes ?? null,
+    })),
+  );
+
+  if (insertError) {
+    return { success: false as const, status: 500, code: "COOK_STEPS_INSERT_FAILED", error: insertError.message };
+  }
+
+  const updatePayload: { approved_option_id: string; status: string; chef_user_id: string; title?: string } = {
+    approved_option_id: selected.id,
+    status: "validated",
+    chef_user_id: ownerId,
+  };
+
+  if (canonicalTitle) {
+    updatePayload.title = canonicalTitle;
+  }
+
+  const { error: menuUpdateError } = await supabase.from("menus").update(updatePayload).eq("id", menu.id);
+  if (menuUpdateError) {
+    return { success: false as const, status: 500, code: "MENU_UPDATE_FAILED", error: menuUpdateError.message };
+  }
+
+  return {
+    success: true as const,
+    cookPlanId: cookPlan.id,
+    menuId: menu.id,
+    shoppingListId: shoppingList?.id ?? null,
+    stepCount: payload.steps.length,
+  };
+}

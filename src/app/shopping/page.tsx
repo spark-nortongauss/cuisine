@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { PageTransition } from "@/components/layout/page-transition";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 
 type ShoppingListView = {
   id: string;
@@ -24,7 +25,7 @@ export default async function ShoppingIndexPage() {
   const supabase = createSupabaseAdminClient();
   const { data: rows } = await supabase
     .from("shopping_lists")
-    .select("id, menu_id, updated_at, menus!inner(owner_id, title, meal_type, serve_at), shopping_items(id, purchased)")
+    .select("id, menu_id, updated_at, menus!inner(owner_id, title, meal_type, serve_at, approved_option_id, menu_options(id, title, michelin_name)), shopping_items(id, purchased)")
     .eq("menus.owner_id", user?.id ?? "")
     .order("updated_at", { ascending: false });
 
@@ -36,7 +37,7 @@ export default async function ShoppingIndexPage() {
     return {
       id: row.id,
       menuId: row.menu_id,
-      menuTitle: menu?.title ?? "Untitled menu",
+      menuTitle: resolveMenuDisplayTitle(menu, (menu?.menu_options ?? []).find((option) => option.id === menu?.approved_option_id) ?? null),
       mealType: menu?.meal_type ?? "Service",
       serveAt: menu?.serve_at ?? null,
       itemCount: items.length,

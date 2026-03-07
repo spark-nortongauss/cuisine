@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateShoppingListFromMenu } from "@/lib/ai/openai";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchMenuWithOptions, normalizeMenuOptions } from "@/lib/menu-records";
+import { resolveCanonicalMenuTitleFromOption } from "@/lib/menu-display";
 import { mapShoppingItemsToInsert } from "@/lib/db-schema";
 
 export async function POST(request: Request) {
@@ -58,9 +59,16 @@ export async function POST(request: Request) {
 
   if (itemError) return NextResponse.json({ success: false, code: "SHOPPING_ITEMS_INSERT_FAILED", error: itemError.message }, { status: 500 });
 
+  const canonicalTitle = resolveCanonicalMenuTitleFromOption({ title: selectedOption.title });
+
   const { error: menuUpdateError } = await supabase
     .from("menus")
-    .update({ approved_option_id: selectedOption.id, status: "validated", chef_user_id: user.id })
+    .update({
+      approved_option_id: selectedOption.id,
+      status: "validated",
+      chef_user_id: user.id,
+      ...(canonicalTitle ? { title: canonicalTitle } : {}),
+    })
     .eq("id", menu.id);
 
   if (menuUpdateError) return NextResponse.json({ success: false, code: "MENU_UPDATE_FAILED", error: menuUpdateError.message }, { status: 500 });

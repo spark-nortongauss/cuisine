@@ -3,6 +3,7 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 
 export default async function CookPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -12,7 +13,7 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
   } = await supabaseServer.auth.getUser();
 
   const supabase = createSupabaseAdminClient();
-  const { data: menu } = await supabase.from("menus").select("id, owner_id, title, serve_at").eq("id", menuId).single();
+  const { data: menu } = await supabase.from("menus").select("id, owner_id, title, serve_at, approved_option_id, menu_options(id, title, michelin_name)").eq("id", menuId).single();
 
   if (!menu) return notFound();
   if (user?.id && menu.owner_id !== user.id) return notFound();
@@ -23,12 +24,15 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
     .eq("menu_id", menuId)
     .maybeSingle();
 
+  const approvedOption = (menu.menu_options ?? []).find((option) => option.id === menu.approved_option_id) ?? null;
+  const displayTitle = resolveMenuDisplayTitle(menu, approvedOption);
+
   if (!cookPlan) {
     return (
       <PageTransition>
         <PageHero
           eyebrow="Service Timeline"
-          title={menu.title ?? "Cook Plan"}
+          title={displayTitle}
           description={menu.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}
         />
         <Card>
@@ -42,13 +46,14 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
     .from("cook_steps")
     .select("id, step_no, phase, title, details, dish_name, relative_minutes")
     .eq("cook_plan_id", cookPlan.id)
+    .order("relative_minutes", { ascending: true, nullsFirst: true })
     .order("step_no", { ascending: true });
 
   return (
     <PageTransition>
       <PageHero
         eyebrow="Service Timeline"
-        title={menu.title ?? "Cook Plan"}
+        title={displayTitle}
         description={menu.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}
       />
 
@@ -61,10 +66,11 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
         </Card>
 
         <Card>
-          <h2 className="font-serif text-2xl">Cook steps</h2>
+          <h2 className="font-serif text-2xl">Detailed timeline</h2>
           <div className="mt-3 space-y-2 text-sm">
             {(steps ?? []).map((step) => (
-              <div key={step.id} className="rounded-xl border border-border/60 p-2">
+              <div key={step.id} className="rounded-xl border border-border/60 p-3">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{step.relative_minutes !== null ? `T${step.relative_minutes >= 0 ? "+" : ""}${step.relative_minutes} min` : `Step ${step.step_no}`}</p>
                 <p><strong>#{step.step_no}</strong> · {step.phase}</p>
                 <p className="font-medium">{step.title}</p>
                 <p className="text-muted-foreground">{step.details}</p>
