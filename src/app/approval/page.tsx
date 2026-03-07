@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { ApprovedMenusTable } from "@/components/modules/approved-menus-table";
+import { resolveMenuDisplayTitle, resolveOptionDisplayTitle } from "@/lib/menu-display";
 
 const APPROVED_STATUSES = new Set(["approved", "validated", "selected"]);
 
@@ -37,12 +38,12 @@ export default async function ApprovalDashboardPage() {
       const approvedOption = (menu.menu_options ?? []).find((option) => option.id === menu.approved_option_id);
       return {
         id: menu.id,
-        title: menu.title ?? "Untitled menu",
+        title: resolveMenuDisplayTitle(menu, approvedOption),
         mealType: menu.meal_type ?? "Service",
         serveAt: menu.serve_at,
         inviteeCount: menu.invitee_count,
         status: menu.status,
-        approvedOptionTitle: approvedOption?.title ?? approvedOption?.michelin_name ?? "Selected option",
+        approvedOptionTitle: resolveOptionDisplayTitle(approvedOption) ?? "Selected option",
         updatedAt: menu.updated_at,
       };
     });

@@ -4,6 +4,7 @@ import { PageHero } from "@/components/ui/page-hero";
 import { PageTransition } from "@/components/layout/page-transition";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { ShoppingListButton } from "@/components/modules/shopping-list-button";
+import { resolveMenuDisplayTitle, resolveOptionDisplayTitle } from "@/lib/menu-display";
 
 export default async function ApprovedMenuDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -56,11 +57,13 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
       .order("step_no", { ascending: true })
     : { data: [] as { id: string; step_no: number; phase: string; title: string; details: string; dish_name: string | null }[] };
 
+  const displayTitle = resolveMenuDisplayTitle(menu, approvedOption);
+
   return (
     <PageTransition>
       <PageHero
         eyebrow="Approved Service"
-        title={menu.title ?? "Approved menu"}
+        title={displayTitle}
         description={`${menu.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}${menu.meal_type ? ` · ${menu.meal_type}` : ""}`}
       />
 
@@ -74,7 +77,7 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
         </Card>
         <Card className="space-y-2">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Selected option</p>
-          <p className="font-serif text-2xl">{approvedOption?.title ?? approvedOption?.michelin_name ?? "Approved option"}</p>
+          <p className="font-serif text-2xl">{resolveOptionDisplayTitle(approvedOption) ?? "Approved option"}</p>
           <p className="text-sm text-muted-foreground">{approvedOption?.concept_summary ?? approvedOption?.concept ?? "No concept summary."}</p>
           <p className="text-sm"><strong>Beverage pairing:</strong> {approvedOption?.beverage_pairing ?? "Not specified"}</p>
           <p className="text-sm"><strong>Option chef notes:</strong> {approvedOption?.chef_notes ?? "No option notes"}</p>

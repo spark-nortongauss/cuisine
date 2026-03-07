@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchMenuWithOptions } from "@/lib/menu-records";
+import { resolveCanonicalMenuTitleFromOption } from "@/lib/menu-display";
 import { enrichMenuImages } from "@/lib/ai/menu-images";
 
 export async function POST(request: Request) {
@@ -35,9 +36,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, code: "OPTION_NOT_FOUND", error: "Menu option does not exist" }, { status: 400 });
   }
 
+  const selectedOption = (menu.menu_options ?? []).find((option) => option.id === optionId);
+  const canonicalTitle = resolveCanonicalMenuTitleFromOption(selectedOption);
+
   const { error: updateError } = await supabase
     .from("menus")
-    .update({ approved_option_id: optionId, status: "approved", chef_user_id: user.id })
+    .update({
+      approved_option_id: optionId,
+      status: "approved",
+      chef_user_id: user.id,
+      ...(canonicalTitle ? { title: canonicalTitle } : {}),
+    })
     .eq("id", menuId);
 
   if (updateError) {

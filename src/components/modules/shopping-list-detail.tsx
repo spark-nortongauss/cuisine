@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 type ShoppingItem = {
   id: string;
@@ -15,15 +17,20 @@ type ShoppingItem = {
 };
 
 type Props = {
+  menuId: string;
   initialItems: ShoppingItem[];
 };
 
-export function ShoppingListDetail({ initialItems }: Props) {
+export function ShoppingListDetail({ menuId, initialItems }: Props) {
+  const router = useRouter();
   const [items, setItems] = useState(initialItems.map((item) => ({ ...item, purchased: Boolean(item.purchased) })));
   const [isSaving, setIsSaving] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const checkedCount = useMemo(() => items.filter((item) => item.purchased).length, [items]);
+  const totalItems = items.length;
+  const allPurchased = totalItems > 0 && checkedCount === totalItems;
 
   async function toggleItem(itemId: string, purchased: boolean) {
     const previousValue = items.find((item) => item.id === itemId)?.purchased ?? false;
@@ -44,6 +51,24 @@ export function ShoppingListDetail({ initialItems }: Props) {
     setIsSaving(null);
   }
 
+  async function generateCooking() {
+    if (!allPurchased || isGenerating) return;
+
+    setIsGenerating(true);
+    setError(null);
+    const res = await fetch(`/api/shopping/menus/${menuId}/generate-cooking`, { method: "POST" });
+
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+      setError(payload?.error ?? "Could not generate cooking timeline. Please try again.");
+      setIsGenerating(false);
+      return;
+    }
+
+    router.push(`/cook/${menuId}`);
+    router.refresh();
+  }
+
   if (!items.length) {
     return (
       <Card>
@@ -59,6 +84,18 @@ export function ShoppingListDetail({ initialItems }: Props) {
         <p className="font-serif text-2xl">{checkedCount} / {items.length} purchased</p>
         <div className="mt-2 h-2 rounded-full bg-muted">
           <div className="h-2 rounded-full bg-success" style={{ width: `${items.length ? (checkedCount / items.length) * 100 : 0}%` }} />
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {allPurchased
+              ? "All items purchased. You can now generate your cooking execution timeline."
+              : "Generate Cooking unlocks when every shopping item is purchased."}
+          </p>
+          <Button onClick={generateCooking} disabled={!allPurchased || isGenerating}>
+            {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+            Generate Cooking
+          </Button>
         </div>
       </div>
 

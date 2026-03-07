@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 
 export default async function FavoriteDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -17,7 +18,7 @@ export default async function FavoriteDetailPage({ params }: { params: Promise<{
   const supabase = createSupabaseAdminClient();
   const { data: favorite } = await supabase
     .from("menu_favorites")
-    .select("menu_id, rating_percent, people_count, served_on, menus(title, meal_type, owner_id)")
+    .select("menu_id, rating_percent, people_count, served_on, menus(title, meal_type, owner_id, approved_option_id, menu_options(id, title, michelin_name))")
     .eq("menu_id", menuId)
     .maybeSingle();
 
@@ -25,11 +26,13 @@ export default async function FavoriteDetailPage({ params }: { params: Promise<{
   const menu = Array.isArray(favorite.menus) ? favorite.menus[0] : favorite.menus;
   if (!menu || (user?.id && menu.owner_id !== user.id)) return notFound();
 
+  const displayTitle = resolveMenuDisplayTitle(menu, (menu.menu_options ?? []).find((option) => option.id === menu.approved_option_id) ?? null);
+
   return (
     <PageTransition>
       <PageHero
         eyebrow="Favorite Detail"
-        title={menu.title ?? "Favorite menu"}
+        title={displayTitle}
         description="A celebrated signature menu with strong post-dinner sentiment and repeat-service potential."
       />
       <div className="grid gap-4 md:grid-cols-3">

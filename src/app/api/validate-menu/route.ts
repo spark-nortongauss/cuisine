@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { generateShoppingListFromMenu, generateCookPlanFromMenu } from "@/lib/ai/openai";
 import { fetchMenuWithOptions, normalizeMenuOptions } from "@/lib/menu-records";
+import { resolveCanonicalMenuTitleFromOption } from "@/lib/menu-display";
 import { mapShoppingItemsToInsert } from "@/lib/db-schema";
 
 export async function POST(request: Request) {
@@ -90,9 +91,16 @@ export async function POST(request: Request) {
   if (stepError) return NextResponse.json({ success: false, code: "COOK_STEPS_INSERT_FAILED", error: stepError.message }, { status: 500 });
   console.info("[validate-menu] cook plan generation end", { menuId: menu.id, cookPlanId: cookPlan.id });
 
+  const canonicalTitle = resolveCanonicalMenuTitleFromOption({ title: selected.title });
+
   const { error: menuUpdateError } = await supabase
     .from("menus")
-    .update({ approved_option_id: selected.id, status: "validated", chef_user_id: user.id })
+    .update({
+      approved_option_id: selected.id,
+      status: "validated",
+      chef_user_id: user.id,
+      ...(canonicalTitle ? { title: canonicalTitle } : {}),
+    })
     .eq("id", menu.id);
 
   if (menuUpdateError) return NextResponse.json({ success: false, code: "MENU_UPDATE_FAILED", error: menuUpdateError.message }, { status: 500 });
