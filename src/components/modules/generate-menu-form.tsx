@@ -32,6 +32,11 @@ type GenerateMenuApiResponse = {
   code?: string;
 };
 
+type GenerateMenuImagesApiResponse = {
+  success?: boolean;
+  options?: MenuOption[];
+};
+
 function nowForDateTimeLocal() {
   const now = new Date();
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
@@ -58,6 +63,19 @@ function normalizeInviteePreference(invitee: InviteePreferenceInput | undefined,
     name: invitee?.name ?? "",
     restrictions: Array.isArray(invitee?.restrictions) ? invitee.restrictions : [],
   };
+}
+
+async function requestMenuImages(menuId: string, prioritizedOptionId?: string) {
+  const res = await fetch("/api/generate-menu-images", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ menuId, prioritizedOptionId }),
+  });
+
+  if (!res.ok) return null;
+  const data = (await res.json()) as GenerateMenuImagesApiResponse;
+  if (!data.success || !data.options) return null;
+  return data.options;
 }
 
 export function GenerateMenuForm() {
@@ -121,9 +139,18 @@ export function GenerateMenuForm() {
         return;
       }
 
-      setMenuId(data.menuId ?? null);
+      const createdMenuId = data.menuId ?? null;
+      setMenuId(createdMenuId);
       setMenus(data.options ?? []);
       setSelectedOptionId(null);
+
+      if (createdMenuId) {
+        void requestMenuImages(createdMenuId).then((nextOptions) => {
+          if (nextOptions?.length) {
+            setMenus(nextOptions);
+          }
+        });
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected network error";
       const suffix = process.env.NODE_ENV === "development" ? ` (${message})` : "";
@@ -155,6 +182,11 @@ export function GenerateMenuForm() {
       });
       if (res.ok) {
         setSelectedOptionId(optionId);
+        void requestMenuImages(menuId, optionId).then((nextOptions) => {
+          if (nextOptions?.length) {
+            setMenus(nextOptions);
+          }
+        });
       }
     } finally {
       setIsSelecting(null);

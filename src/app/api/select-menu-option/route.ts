@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchMenuWithOptions } from "@/lib/menu-records";
+import { enrichMenuImages } from "@/lib/ai/menu-images";
 
 export async function POST(request: Request) {
   const { menuId, optionId } = await request.json();
@@ -42,6 +43,13 @@ export async function POST(request: Request) {
   if (updateError) {
     return NextResponse.json({ success: false, code: "MENU_UPDATE_FAILED", error: updateError.message }, { status: 500 });
   }
+
+  void enrichMenuImages({
+    supabase,
+    ownerId: user.id,
+    menuId,
+    prioritizedOptionId: optionId,
+  });
 
   return NextResponse.json({ success: true, menuId, approvedOptionId: optionId, status: "approved" });
 }

@@ -4,6 +4,7 @@ import { generateMenuSchema } from "@/lib/schemas/menu";
 import { generateMichelinMenus } from "@/lib/ai/openai";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeMenuOptions } from "@/lib/menu-records";
+import { enrichMenuImages } from "@/lib/ai/menu-images";
 
 type GenerateMenuSuccessResponse = {
   success: true;
@@ -226,6 +227,13 @@ export async function POST(request: Request) {
       menuId: menu.id,
       options: normalizedOptions,
     };
+
+    void enrichMenuImages({
+      supabase,
+      ownerId: user.id,
+      menuId: menu.id,
+      prioritizedOptionId: undefined,
+    });
     console.info("[generate-menu] request end", {
       menuId: menu.id,
       optionCount: response.options.length,
