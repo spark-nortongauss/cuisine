@@ -4,6 +4,9 @@ import { PageHero } from "@/components/ui/page-hero";
 import { PageTransition } from "@/components/layout/page-transition";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
+import type { Database } from "@/lib/supabase/database.types";
+
+type ShoppingMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
 type ShoppingListView = {
   id: string;
@@ -34,10 +37,13 @@ export default async function ShoppingIndexPage() {
     const purchasedCount = items.filter((item) => item.purchased).length;
     const menu = Array.isArray(row.menus) ? row.menus[0] : row.menus;
 
+    const menuOptions: ShoppingMenuOptionRow[] = (menu?.menu_options ?? []) as ShoppingMenuOptionRow[];
+    const approvedOption: ShoppingMenuOptionRow | null = menuOptions.find((option: ShoppingMenuOptionRow) => option.id === menu?.approved_option_id) ?? null;
+
     return {
       id: row.id,
       menuId: row.menu_id,
-      menuTitle: resolveMenuDisplayTitle(menu, (menu?.menu_options ?? []).find((option) => option.id === menu?.approved_option_id) ?? null),
+      menuTitle: resolveMenuDisplayTitle(menu, approvedOption),
       mealType: menu?.meal_type ?? "Service",
       serveAt: menu?.serve_at ?? null,
       itemCount: items.length,

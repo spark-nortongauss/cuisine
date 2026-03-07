@@ -5,6 +5,9 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/sup
 import { ShoppingListDetail } from "@/components/modules/shopping-list-detail";
 import { Card } from "@/components/ui/card";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
+import type { Database } from "@/lib/supabase/database.types";
+
+type ShoppingMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
 export default async function ShoppingDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -27,7 +30,8 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
 
   const { data: shoppingList } = await supabase.from("shopping_lists").select("id").eq("menu_id", menuId).maybeSingle();
 
-  const approvedOption = (menu.menu_options ?? []).find((option) => option.id === menu.approved_option_id) ?? null;
+  const menuOptions: ShoppingMenuOptionRow[] = (menu.menu_options ?? []) as ShoppingMenuOptionRow[];
+  const approvedOption: ShoppingMenuOptionRow | null = menuOptions.find((option: ShoppingMenuOptionRow) => option.id === menu.approved_option_id) ?? null;
   const title = resolveMenuDisplayTitle(menu, approvedOption);
   const subtitle = `${menu.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}${menu.meal_type ? ` · ${menu.meal_type}` : ""}`;
 

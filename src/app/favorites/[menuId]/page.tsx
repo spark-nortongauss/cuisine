@@ -6,6 +6,9 @@ import { PageHero } from "@/components/ui/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
+import type { Database } from "@/lib/supabase/database.types";
+
+type FavoriteMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
 export default async function FavoriteDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -26,7 +29,9 @@ export default async function FavoriteDetailPage({ params }: { params: Promise<{
   const menu = Array.isArray(favorite.menus) ? favorite.menus[0] : favorite.menus;
   if (!menu || (user?.id && menu.owner_id !== user.id)) return notFound();
 
-  const displayTitle = resolveMenuDisplayTitle(menu, (menu.menu_options ?? []).find((option) => option.id === menu.approved_option_id) ?? null);
+  const menuOptions: FavoriteMenuOptionRow[] = (menu.menu_options ?? []) as FavoriteMenuOptionRow[];
+  const approvedOption: FavoriteMenuOptionRow | null = menuOptions.find((option: FavoriteMenuOptionRow) => option.id === menu.approved_option_id) ?? null;
+  const displayTitle = resolveMenuDisplayTitle(menu, approvedOption);
 
   return (
     <PageTransition>
