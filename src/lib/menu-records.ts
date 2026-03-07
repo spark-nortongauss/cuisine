@@ -17,6 +17,8 @@ type MenuRow = {
     concept_summary: string | null;
     sort_order: number | null;
     option_no: number;
+    hero_image_path: string | null;
+    hero_image_prompt: string | null;
     menu_dishes: Array<{
       course_no: number;
       course_label: string | null;
@@ -25,6 +27,7 @@ type MenuRow = {
       plating_notes: string | null;
       decoration_notes: string | null;
       image_prompt: string | null;
+      image_path: string | null;
     }>;
   }>;
 };
@@ -36,6 +39,8 @@ export function normalizeMenuOptions(options: MenuRow["menu_options"] = []): Men
       id: option.id,
       title: option.title ?? option.michelin_name,
       concept: option.concept_summary ?? option.concept ?? "",
+      heroImagePath: option.hero_image_path,
+      heroImagePrompt: option.hero_image_prompt,
       dishes: (option.menu_dishes ?? [])
         .sort((a, b) => a.course_no - b.course_no)
         .map((dish) => ({
@@ -45,6 +50,7 @@ export function normalizeMenuOptions(options: MenuRow["menu_options"] = []): Men
           platingNotes: dish.plating_notes ?? "",
           decorationNotes: dish.decoration_notes ?? undefined,
           imagePrompt: dish.image_prompt ?? "",
+          imagePath: dish.image_path,
         })),
     }));
 }
@@ -69,6 +75,8 @@ export async function fetchMenuWithOptions(menuId: string) {
         concept_summary,
         sort_order,
         option_no,
+        hero_image_path,
+        hero_image_prompt,
         menu_dishes (
           course_no,
           course_label,
@@ -76,7 +84,8 @@ export async function fetchMenuWithOptions(menuId: string) {
           description,
           plating_notes,
           decoration_notes,
-          image_prompt
+          image_prompt,
+          image_path
         )
       )
     `)

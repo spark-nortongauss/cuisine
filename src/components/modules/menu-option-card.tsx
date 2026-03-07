@@ -2,22 +2,51 @@
 
 import * as Accordion from "@radix-ui/react-accordion";
 import { motion } from "framer-motion";
-import { ChevronDown, Sparkles, UtensilsCrossed, Wine } from "lucide-react";
+import { CheckCircle2, ChevronDown, ImageIcon, Sparkles, UtensilsCrossed, Wine } from "lucide-react";
 import { MenuOption } from "@/types/domain";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export function MenuOptionCard({ option }: { option: MenuOption }) {
+type MenuOptionCardProps = {
+  option: MenuOption;
+  onSelect?: () => void;
+  isSelected?: boolean;
+  selecting?: boolean;
+};
+
+function DishImage({ imagePath }: { imagePath?: string | null }) {
+  if (imagePath) {
+    return <img src={imagePath} alt="Dish visual" className="h-32 w-full rounded-xl object-cover md:h-28 md:w-44" loading="lazy" />;
+  }
+
+  return (
+    <div className="flex h-32 w-full items-center justify-center rounded-xl border border-border/70 bg-gradient-to-br from-primary/10 via-card to-accent/15 text-xs text-muted-foreground md:h-28 md:w-44">
+      <ImageIcon size={16} className="mr-2" />
+      Image pending
+    </div>
+  );
+}
+
+export function MenuOptionCard({ option, onSelect, isSelected = false, selecting = false }: MenuOptionCardProps) {
   return (
     <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-      <Card variant="feature" className="space-y-5 overflow-hidden">
+      <Card variant="feature" className={cn("space-y-5 overflow-hidden border transition", isSelected ? "border-success/50 shadow-glow" : "") }>
+        {option.heroImagePath ? (
+          <img src={option.heroImagePath} alt={`${option.title} hero`} className="h-44 w-full rounded-2xl object-cover md:h-52" loading="lazy" />
+        ) : (
+          <div className="flex h-44 w-full items-center justify-center rounded-2xl border border-border/60 bg-gradient-to-r from-primary/10 via-card/90 to-accent/20 text-sm text-muted-foreground md:h-52">
+            Premium hero image pending
+          </div>
+        )}
+
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Curated option</p>
             <h3 className="font-serif text-3xl md:text-4xl">{option.title}</h3>
           </div>
-          <Badge variant="accent">Michelin-inspired</Badge>
+          <Badge variant={isSelected ? "success" : "accent"}>{isSelected ? "Selected" : "Michelin-inspired"}</Badge>
         </div>
 
         <p className="text-sm text-muted-foreground md:text-base">{option.concept}</p>
@@ -35,13 +64,14 @@ export function MenuOptionCard({ option }: { option: MenuOption }) {
                 </Accordion.Trigger>
               </Accordion.Header>
               <Accordion.Content className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden px-4 pb-4">
-                <div className="space-y-2 border-t border-border/60 pt-3 text-sm">
+                <div className="space-y-3 border-t border-border/60 pt-3 text-sm">
+                  <DishImage imagePath={dish.imagePath} />
                   <p className="text-muted-foreground">{dish.description}</p>
                   <p className="flex items-start gap-2"><UtensilsCrossed size={14} className="mt-0.5 text-muted-foreground" />Plating: {dish.platingNotes}</p>
                   {dish.beverageSuggestion ? (
                     <p className="flex items-center gap-2 text-muted-foreground"><Wine size={14} />{dish.beverageSuggestion}</p>
                   ) : null}
-                  <p className="text-xs italic text-muted-foreground">Image prompt: {dish.imagePrompt}</p>
+                  {process.env.NODE_ENV === "development" ? <p className="text-xs italic text-muted-foreground">Image prompt: {dish.imagePrompt}</p> : null}
                 </div>
               </Accordion.Content>
             </Accordion.Item>
@@ -53,8 +83,9 @@ export function MenuOptionCard({ option }: { option: MenuOption }) {
             <Sparkles size={14} />
             Regenerate
           </Button>
-          <Button variant="outline" size="sm">
-            Share
+          <Button variant={isSelected ? "default" : "outline"} size="sm" onClick={onSelect} disabled={!onSelect || selecting || isSelected}>
+            <CheckCircle2 size={14} />
+            {selecting ? "Selecting..." : isSelected ? "Selected" : "Select"}
           </Button>
         </div>
       </Card>

@@ -9,6 +9,7 @@ create table if not exists public.menus (
   restrictions text[] not null default '{}',
   notes text,
   invitee_count integer,
+  invitee_preferences jsonb,
   serve_at timestamptz,
   status text not null default 'draft',
   approved_option_id uuid,

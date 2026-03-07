@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   if (menu.owner_id !== user.id) return NextResponse.json({ success: false, code: "FORBIDDEN", error: "Forbidden" }, { status: 403 });
 
   const options = normalizeMenuOptions(menu.menu_options ?? []);
-  const selected = options.find((option) => option.id === selectedOptionId) ?? options[0];
+  const selected = options.find((option) => option.id === selectedOptionId) ?? options.find((option) => option.id === menu.approved_option_id) ?? options[0];
   if (!selected) return NextResponse.json({ success: false, code: "NO_OPTION", error: "No generated option found" }, { status: 400 });
 
   console.info("[validate-menu] shopping list generation start", { menuId: menu.id, optionId: selected.id });

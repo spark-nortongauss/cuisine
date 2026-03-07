@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { CalendarClock, Check, Sparkles, Users } from "lucide-react";
+import { CalendarClock, Check, Sparkles, UserRound, Users } from "lucide-react";
 import { generateMenuSchema } from "@/lib/schemas/menu";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-const restrictions = ["seafood", "shellfish", "gluten", "lactose", "peanuts", "tree nuts", "eggs", "soy", "sesame", "vegetarian", "vegan", "pork-free", "diabetes type 1", "diabetes type 2"];
+const restrictionOptions = ["seafood", "shellfish", "gluten", "lactose", "peanuts", "tree nuts", "eggs", "soy", "sesame", "vegetarian", "vegan", "pork-free", "diabetes type 1", "diabetes type 2"];
 const mealTypes: FormValues["mealType"][] = ["breakfast", "brunch", "lunch", "mid-afternoon", "dinner"];
 const courseCounts: FormValues["courseCount"][] = [3, 4, 5, 6];
 
@@ -53,7 +53,10 @@ function resolveGenerateErrorMessage(payload: GenerateMenuApiResponse, status: n
 
 export function GenerateMenuForm() {
   const [menus, setMenus] = useState<MenuOption[]>([]);
+  const [menuId, setMenuId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSelecting, setIsSelecting] = useState<string | null>(null);
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(generateMenuSchema),
@@ -63,18 +66,46 @@ export function GenerateMenuForm() {
       restrictions: [],
       serveAt: nowForDateTimeLocal(),
       inviteeCount: 6,
+      inviteePreferences: Array.from({ length: 6 }, (_, index) => ({ label: `Individual ${index + 1}`, name: "", restrictions: [] })),
     },
   });
+
+  const inviteeCount = form.watch("inviteeCount") ?? 1;
+  const inviteePreferences = form.watch("inviteePreferences") ?? [];
+
+  useEffect(() => {
+    const safeCount = Math.min(60, Math.max(1, inviteeCount || 1));
+    const nextPreferences = Array.from({ length: safeCount }, (_, index) => {
+      const existing = inviteePreferences[index];
+      return {
+        label: existing?.label?.trim() || `Individual ${index + 1}`,
+        name: existing?.name ?? "",
+        restrictions: existing?.restrictions ?? [],
+      };
+    });
+
+    form.setValue("inviteePreferences", nextPreferences, { shouldDirty: true });
+
+    const aggregate = Array.from(new Set(nextPreferences.flatMap((invitee) => invitee.restrictions ?? [])));
+    form.setValue("restrictions", aggregate, { shouldDirty: true });
+  }, [inviteeCount]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     setIsLoading(true);
     form.clearErrors("serveAt");
 
     try {
+      const sanitizedPreferences = (values.inviteePreferences ?? []).slice(0, values.inviteeCount).map((invitee, index) => ({
+        label: invitee.label?.trim() || `Individual ${index + 1}`,
+        name: invitee.name?.trim() || null,
+        restrictions: invitee.restrictions ?? [],
+      }));
+      const aggregate = Array.from(new Set(sanitizedPreferences.flatMap((invitee) => invitee.restrictions ?? [])));
+
       const res = await fetch("/api/generate-menu", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, inviteePreferences: sanitizedPreferences, restrictions: aggregate }),
       });
 
       const data = (await res.json()) as GenerateMenuApiResponse;
@@ -84,7 +115,9 @@ export function GenerateMenuForm() {
         return;
       }
 
+      setMenuId(data.menuId ?? null);
       setMenus(data.options ?? []);
+      setSelectedOptionId(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected network error";
       const suffix = process.env.NODE_ENV === "development" ? ` (${message})` : "";
@@ -96,7 +129,6 @@ export function GenerateMenuForm() {
 
   const selectedMealType = form.watch("mealType");
   const selectedCourseCount = form.watch("courseCount");
-  const selectedRestrictions = form.watch("restrictions") ?? [];
   const selectedServiceTime = form.watch("serveAt");
   const servicePreview = useMemo(() => {
     if (!selectedServiceTime) return "";
@@ -104,6 +136,24 @@ export function GenerateMenuForm() {
     if (Number.isNaN(parsed.getTime())) return "";
     return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(parsed);
   }, [selectedServiceTime]);
+
+  const selectOption = async (optionId: string) => {
+    if (!menuId || isSelecting) return;
+    setIsSelecting(optionId);
+
+    try {
+      const res = await fetch("/api/select-menu-option", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ menuId, optionId }),
+      });
+      if (res.ok) {
+        setSelectedOptionId(optionId);
+      }
+    } finally {
+      setIsSelecting(null);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -170,25 +220,62 @@ export function GenerateMenuForm() {
             <Textarea {...form.register("notes")} placeholder="Desired produce, preferred regions, plating cues, or thematic inspiration." />
           </label>
 
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Restrictions</p>
-            <div className="flex flex-wrap gap-2">
-              {restrictions.map((item) => {
-                const active = selectedRestrictions.includes(item);
-                return (
-                  <label
-                    key={item}
-                    className={cn(
-                      "inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition",
-                      active ? "border-primary/40 bg-primary/10 text-primary" : "border-border/70 bg-card/70 text-muted-foreground",
-                    )}
-                  >
-                    <input type="checkbox" value={item} {...form.register("restrictions")} className="sr-only" />
-                    {active ? <Check size={12} /> : null}
-                    {item}
-                  </label>
-                );
-              })}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Restrictions per individual</p>
+              <Badge variant="accent">{(form.watch("restrictions") ?? []).length} unique restrictions</Badge>
+            </div>
+            <div className="space-y-3">
+              {(form.watch("inviteePreferences") ?? []).slice(0, Math.max(1, inviteeCount)).map((invitee, inviteeIndex) => (
+                <Card key={`invitee-${inviteeIndex}`} variant="muted" className="space-y-3 p-4">
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground"><UserRound size={13} />Label</span>
+                      <Input
+                        value={invitee.label}
+                        onChange={(event) => {
+                          form.setValue(`inviteePreferences.${inviteeIndex}.label`, event.target.value);
+                        }}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">First name (optional)</span>
+                      <Input
+                        value={invitee.name ?? ""}
+                        onChange={(event) => form.setValue(`inviteePreferences.${inviteeIndex}.name`, event.target.value)}
+                        placeholder="e.g. Ana"
+                      />
+                    </label>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {restrictionOptions.map((item) => {
+                      const selected = invitee.restrictions.includes(item);
+                      return (
+                        <button
+                          type="button"
+                          key={`${inviteeIndex}-${item}`}
+                          onClick={() => {
+                            const current = form.getValues(`inviteePreferences.${inviteeIndex}.restrictions`) ?? [];
+                            const next = current.includes(item) ? current.filter((value) => value !== item) : [...current, item];
+                            form.setValue(`inviteePreferences.${inviteeIndex}.restrictions`, next, { shouldDirty: true });
+                            const aggregate = Array.from(
+                              new Set((form.getValues("inviteePreferences") ?? []).flatMap((person) => person?.restrictions ?? [])),
+                            );
+                            form.setValue("restrictions", aggregate, { shouldDirty: true });
+                          }}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs transition",
+                            selected ? "border-primary/45 bg-primary/10 text-primary" : "border-border/70 bg-card/70 text-muted-foreground",
+                          )}
+                        >
+                          {selected ? <Check size={12} /> : null}
+                          {item}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
 
@@ -210,7 +297,13 @@ export function GenerateMenuForm() {
       <motion.div layout className="space-y-4">
         {menus.length > 0 ? <Badge variant="success">{menus.length} options generated</Badge> : null}
         {menus.map((menu) => (
-          <MenuOptionCard key={menu.id} option={menu} />
+          <MenuOptionCard
+            key={menu.id}
+            option={menu}
+            onSelect={() => selectOption(menu.id)}
+            isSelected={selectedOptionId === menu.id}
+            selecting={isSelecting === menu.id}
+          />
         ))}
       </motion.div>
     </div>

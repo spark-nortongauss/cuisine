@@ -5,7 +5,7 @@ const cardVariants = cva("rounded-3xl border p-5 md:p-6", {
   variants: {
     variant: {
       default: "border-border/70 bg-card/90 text-card-foreground shadow-luxe",
-      glass: "border-white/30 bg-white/45 text-card-foreground shadow-luxe backdrop-blur-xl",
+      glass: "border-accent/25 bg-card/65 text-card-foreground shadow-luxe backdrop-blur-xl",
       feature: "border-primary/20 bg-gradient-to-br from-card via-card to-muted/20 text-card-foreground shadow-glow",
       muted: "border-border/60 bg-muted/55 text-card-foreground",
     },

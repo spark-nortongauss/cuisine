@@ -56,13 +56,22 @@ export async function POST(request: Request) {
     }
 
     const payload = parsed.data;
+    const inviteePreferences = payload.inviteePreferences?.slice(0, payload.inviteeCount) ?? [];
+    const aggregateRestrictions = Array.from(
+      new Set([
+        ...payload.restrictions,
+        ...inviteePreferences.flatMap((invitee) => invitee.restrictions ?? []),
+      ]),
+    );
+
     console.info("[generate-menu] validated payload", {
       mealType: payload.mealType,
       courseCount: payload.courseCount,
       inviteeCount: payload.inviteeCount,
       serveAt: payload.serveAt,
-      restrictionsCount: payload.restrictions.length,
+      restrictionsCount: aggregateRestrictions.length,
       hasNotes: Boolean(payload.notes?.trim()),
+      inviteePreferencesCount: inviteePreferences.length,
     });
 
     const supabaseServer = await createSupabaseServerClient();
@@ -82,10 +91,11 @@ export async function POST(request: Request) {
         chef_user_id: user.id,
         meal_type: payload.mealType,
         course_count: payload.courseCount,
-        restrictions: payload.restrictions,
+        restrictions: aggregateRestrictions,
         notes: payload.notes ?? null,
         serve_at: payload.serveAt,
         invitee_count: payload.inviteeCount,
+        invitee_preferences: inviteePreferences,
         status: "generated",
       })
       .select("id")
@@ -108,7 +118,7 @@ export async function POST(request: Request) {
         mealType: payload.mealType,
         courseCount: payload.courseCount,
       });
-      options = await generateMichelinMenus(payload);
+      options = await generateMichelinMenus({ ...payload, restrictions: aggregateRestrictions, inviteePreferences });
       console.info("[generate-menu] OpenAI response received", { optionCount: options.length });
     } catch (error) {
       console.error("[generate-menu] OpenAI/parsing failed", summarizeError(error));
@@ -142,7 +152,7 @@ export async function POST(request: Request) {
     const { data: insertedOptions, error: optionError } = await supabase
       .from("menu_options")
       .insert(optionRows)
-      .select("id, title, michelin_name, concept, concept_summary, sort_order, option_no");
+      .select("id, title, michelin_name, concept, concept_summary, sort_order, option_no, hero_image_path, hero_image_prompt");
 
     if (optionError || !insertedOptions?.length) {
       console.error("[generate-menu] menu_options insert failed", {
@@ -196,6 +206,8 @@ export async function POST(request: Request) {
         concept_summary: option.concept_summary,
         sort_order: option.sort_order,
         option_no: option.option_no,
+        hero_image_path: option.hero_image_path,
+        hero_image_prompt: option.hero_image_prompt,
         menu_dishes: (options[optionIndex]?.dishes ?? []).map((dish, index) => ({
           course_no: index + 1,
           course_label: dish.course,
@@ -204,6 +216,7 @@ export async function POST(request: Request) {
           plating_notes: dish.platingNotes,
           decoration_notes: dish.decorationNotes ?? null,
           image_prompt: dish.imagePrompt,
+          image_path: dish.imagePath ?? null,
         })),
       })),
     );

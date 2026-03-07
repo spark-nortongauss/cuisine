@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   const options = normalizeMenuOptions(menu.menu_options ?? []);
-  const menuOption = options.find((option) => option.id === selectedOptionId) ?? options[0] ?? null;
+  const menuOption = options.find((option) => option.id === selectedOptionId) ?? options.find((option) => option.id === menu.approved_option_id) ?? options[0] ?? null;
 
   if (!menuOption) return NextResponse.json({ success: false, code: "NO_OPTION", error: "No menu option available" }, { status: 400 });
 

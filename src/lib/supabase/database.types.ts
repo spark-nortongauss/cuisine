@@ -414,6 +414,7 @@ export type Database = {
           created_at: string;
           id: string;
           invitee_count: number | null;
+          invitee_preferences: Json | null;
           meal_type: string;
           notes: string | null;
           owner_id: string;
@@ -430,6 +431,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           invitee_count?: number | null;
+          invitee_preferences?: Json | null;
           meal_type: string;
           notes?: string | null;
           owner_id?: string;
@@ -446,6 +448,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           invitee_count?: number | null;
+          invitee_preferences?: Json | null;
           meal_type?: string;
           notes?: string | null;
           owner_id?: string;

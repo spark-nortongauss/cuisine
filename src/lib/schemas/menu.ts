@@ -10,6 +10,12 @@ const serviceDateTimeSchema = z.string().trim().min(1, "Please select a service 
   return asDate.toISOString();
 });
 
+const inviteePreferenceSchema = z.object({
+  label: z.string().min(1),
+  name: z.string().trim().max(40).optional().nullable(),
+  restrictions: z.array(z.string()).default([]),
+});
+
 export const generateMenuSchema = z.object({
   courseCount: z.union([z.literal(3), z.literal(4), z.literal(5), z.literal(6)]),
   mealType: z.enum(["breakfast", "brunch", "lunch", "mid-afternoon", "dinner"]),
@@ -17,6 +23,7 @@ export const generateMenuSchema = z.object({
   notes: z.string().max(300).optional(),
   serveAt: serviceDateTimeSchema,
   inviteeCount: z.number().min(1).max(60),
+  inviteePreferences: z.array(inviteePreferenceSchema).optional(),
 });
 
 export const shareMenuSchema = z.object({
