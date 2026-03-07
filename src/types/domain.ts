@@ -25,6 +25,7 @@ export interface Dish {
   beverageSuggestion?: string;
   imagePrompt: string;
   imagePath?: string | null;
+  imageUrl?: string | null;
 }
 
 export interface MenuOption {
@@ -32,6 +33,7 @@ export interface MenuOption {
   title: string;
   concept: string;
   heroImagePath?: string | null;
+  heroImageUrl?: string | null;
   heroImagePrompt?: string | null;
   dishes: Dish[];
 }

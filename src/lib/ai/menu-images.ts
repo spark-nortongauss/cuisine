@@ -5,6 +5,7 @@ import { getOpenAiClient } from "@/lib/ai/openai";
 import type { Database } from "@/lib/supabase/database.types";
 
 const MENU_IMAGE_BUCKET = process.env.SUPABASE_MENU_IMAGE_BUCKET ?? "menu-assets";
+const IMAGE_GENERATION_RETRIES = 2;
 
 type AdminClient = SupabaseClient<Database>;
 
@@ -86,11 +87,27 @@ async function generateImageBuffer(prompt: string) {
   return Buffer.from(base64, "base64");
 }
 
-async function uploadPng(
-  supabase: AdminClient,
-  path: string,
-  fileBuffer: Buffer,
-) {
+async function generateImageBufferWithRetry(prompt: string, context: Record<string, unknown>) {
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= IMAGE_GENERATION_RETRIES; attempt += 1) {
+    try {
+      return await generateImageBuffer(prompt);
+    } catch (error) {
+      lastError = error;
+      console.error("[menu-images] image generation attempt failed", {
+        ...context,
+        attempt,
+        maxAttempts: IMAGE_GENERATION_RETRIES,
+        error,
+      });
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Image generation failed after retries");
+}
+
+async function uploadPng(supabase: AdminClient, path: string, fileBuffer: Buffer) {
   const { error } = await supabase.storage.from(MENU_IMAGE_BUCKET).upload(path, fileBuffer, {
     contentType: "image/png",
     cacheControl: "3600",
@@ -111,15 +128,18 @@ async function generateAndStoreDishImage(params: {
 }) {
   const { supabase, ownerId, menuId, option, dish } = params;
   const prompt = buildDishPrompt(option, dish);
-  const image = await generateImageBuffer(prompt);
+  const image = await generateImageBufferWithRetry(prompt, {
+    menuId,
+    optionId: option.id,
+    dishId: dish.id,
+    dishName: dish.dish_name,
+    type: "dish",
+  });
 
   const filePath = `${ownerId}/${menuId}/options/${option.id}/dishes/${dish.course_no}-${toSlug(dish.dish_name) || dish.id}.png`;
   await uploadPng(supabase, filePath, image);
 
-  const { error } = await supabase
-    .from("menu_dishes")
-    .update({ image_prompt: prompt, image_path: filePath })
-    .eq("id", dish.id);
+  const { error } = await supabase.from("menu_dishes").update({ image_prompt: prompt, image_path: filePath }).eq("id", dish.id);
 
   if (error) {
     throw new Error(`Failed to update dish image_path for ${dish.id}: ${error.message}`);
@@ -134,15 +154,17 @@ async function generateAndStoreHeroImage(params: {
 }) {
   const { supabase, ownerId, menuId, option } = params;
   const prompt = buildHeroPrompt(option);
-  const image = await generateImageBuffer(prompt);
+  const image = await generateImageBufferWithRetry(prompt, {
+    menuId,
+    optionId: option.id,
+    optionTitle: option.title ?? option.michelin_name,
+    type: "hero",
+  });
 
   const filePath = `${ownerId}/${menuId}/options/${option.id}/hero.png`;
   await uploadPng(supabase, filePath, image);
 
-  const { error } = await supabase
-    .from("menu_options")
-    .update({ hero_image_prompt: prompt, hero_image_path: filePath })
-    .eq("id", option.id);
+  const { error } = await supabase.from("menu_options").update({ hero_image_prompt: prompt, hero_image_path: filePath }).eq("id", option.id);
 
   if (error) {
     throw new Error(`Failed to update hero_image_path for ${option.id}: ${error.message}`);
@@ -200,7 +222,12 @@ export async function enrichMenuImages(params: {
         await generateAndStoreHeroImage({ supabase, ownerId, menuId, option });
       }
     } catch (error) {
-      console.error("[menu-images] hero generation failed", { optionId: option.id, error });
+      console.error("[menu-images] hero generation failed", {
+        menuId,
+        optionId: option.id,
+        optionTitle: option.title ?? option.michelin_name,
+        error,
+      });
     }
 
     const dishes = [...(option.menu_dishes ?? [])].sort((a, b) => a.course_no - b.course_no);
@@ -209,12 +236,15 @@ export async function enrichMenuImages(params: {
       try {
         await generateAndStoreDishImage({ supabase, ownerId, menuId, option, dish });
       } catch (error) {
-        console.error("[menu-images] dish generation failed", { optionId: option.id, dishId: dish.id, error });
+        console.error("[menu-images] dish generation failed", {
+          menuId,
+          optionId: option.id,
+          optionTitle: option.title ?? option.michelin_name,
+          dishId: dish.id,
+          dishName: dish.dish_name,
+          error,
+        });
       }
     }
   }
-}
-
-export function getMenuImageBucket() {
-  return MENU_IMAGE_BUCKET;
 }

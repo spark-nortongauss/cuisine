@@ -3,13 +3,13 @@ import { ZodError } from "zod";
 import { generateMenuSchema } from "@/lib/schemas/menu";
 import { generateMichelinMenus } from "@/lib/ai/openai";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
-import { normalizeMenuOptions } from "@/lib/menu-records";
+import { normalizeMenuOptionsWithResolvedImages } from "@/lib/menu-records";
 import { enrichMenuImages } from "@/lib/ai/menu-images";
 
 type GenerateMenuSuccessResponse = {
   success: true;
   menuId: string;
-  options: ReturnType<typeof normalizeMenuOptions>;
+  options: Awaited<ReturnType<typeof normalizeMenuOptionsWithResolvedImages>>;
 };
 
 type GenerateMenuErrorResponse = {
@@ -198,7 +198,7 @@ export async function POST(request: Request) {
     }
     console.info("[generate-menu] menu_dishes insert end", { menuId: menu.id });
 
-    const normalizedOptions = normalizeMenuOptions(
+    const normalizedOptions = await normalizeMenuOptionsWithResolvedImages(
       optionByIndex.map((option, optionIndex) => ({
         id: option.id,
         title: option.title,
