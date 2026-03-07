@@ -1,22 +1,39 @@
 import { CheckCircle2, Clock3, Trophy, Users } from "lucide-react";
 import { PageTransition } from "@/components/layout/page-transition";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
+import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 
-const stats = [
-  { label: "Responses", value: "4 / 6", icon: Users },
-  { label: "Pending", value: "2", icon: Clock3 },
-  { label: "Leader", value: "Nocturne Terroir", icon: Trophy },
-];
+export default async function ApprovalDashboardPage() {
+  const supabaseServer = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
 
-export default function ApprovalDashboardPage() {
+  const supabase = createSupabaseAdminClient();
+  const { data: menus } = await supabase
+    .from("menus")
+    .select("id, title, status, serve_at, meal_type, approved_option_id")
+    .eq("owner_id", user?.id ?? "")
+    .not("approved_option_id", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(6);
+
+  const approvedCount = (menus ?? []).length;
+  const validatedCount = (menus ?? []).filter((menu) => menu.status === "validated").length;
+
+  const stats = [
+    { label: "Approved", value: String(approvedCount), icon: Users },
+    { label: "Validated", value: String(validatedCount), icon: CheckCircle2 },
+    { label: "Leader", value: approvedCount ? "Option selected" : "Pending", icon: Trophy },
+  ];
+
   return (
     <PageTransition>
       <PageHero
         eyebrow="Approval Intelligence"
         title="Monitor consensus with confidence"
-        description="Track invitee responses, compare menu preference momentum, and validate when your final service is clear."
+        description="Track selected options and move quickly into validated shopping and cook operations."
       />
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -30,15 +47,23 @@ export default function ApprovalDashboardPage() {
 
       <Card variant="feature" className="space-y-4">
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Completion</p>
-          <div className="h-3 overflow-hidden rounded-full bg-muted">
-            <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-primary to-accent" />
-          </div>
+          <p className="text-sm text-muted-foreground">Selected menus</p>
+          {(menus ?? []).length ? (
+            <div className="space-y-2">
+              {(menus ?? []).map((menu) => (
+                <div key={menu.id} className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/70 px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-medium">{menu.title ?? "Untitled menu"}</p>
+                    <p className="text-xs text-muted-foreground">{menu.meal_type ?? "Service"} · {menu.status}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{menu.serve_at ? new Date(menu.serve_at).toLocaleDateString() : "No date"}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground"><Clock3 size={14} />No selected menus yet. Select an option on Generate to approve it.</p>
+          )}
         </div>
-        <Button className="w-full md:w-auto">
-          <CheckCircle2 size={16} />
-          Validate Menu
-        </Button>
       </Card>
     </PageTransition>
   );

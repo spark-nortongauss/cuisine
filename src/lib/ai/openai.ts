@@ -48,8 +48,15 @@ const menuGenerationSchema = z.object({
 });
 
 export async function generateMichelinMenus(input: GenerateMenuInput): Promise<MenuOption[]> {
+  const inviteeContext = input.inviteePreferences?.length
+    ? input.inviteePreferences
+        .map((invitee) => `${invitee.label}${invitee.name ? ` (${invitee.name})` : ""}: ${invitee.restrictions.join(", ") || "none"}`)
+        .join("; ")
+    : "none";
+
   const prompt = `Create exactly 3 premium menu options for a ${input.mealType} with ${input.courseCount} courses.
-Restrictions: ${input.restrictions.join(", ") || "none"}.
+Restrictions (aggregate): ${input.restrictions.join(", ") || "none"}.
+Restrictions per individual: ${inviteeContext}.
 Service date/time: ${input.serveAt}.
 Guest count: ${input.inviteeCount}.
 Chef notes: ${input.notes || "none"}.

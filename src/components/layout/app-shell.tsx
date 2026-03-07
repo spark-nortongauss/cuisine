@@ -29,7 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="luxury-shell min-h-screen pb-24">
       {!publicLayout ? (
         <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 pt-5 md:px-8 md:pt-7">
-          <div className="flex items-center gap-3 rounded-2xl border border-white/35 bg-white/60 px-4 py-2 backdrop-blur-md">
+          <div className="flex items-center gap-3 rounded-2xl border border-accent/20 bg-card/70 px-4 py-2 backdrop-blur-md">
             <span className="rounded-xl bg-primary p-2 text-primary-foreground">
               <ChefHat size={16} />
             </span>
