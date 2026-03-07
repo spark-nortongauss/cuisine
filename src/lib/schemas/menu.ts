@@ -23,7 +23,7 @@ export const generateMenuSchema = z.object({
   notes: z.string().max(300).optional(),
   serveAt: serviceDateTimeSchema,
   inviteeCount: z.number().min(1).max(60),
-  inviteePreferences: z.array(inviteePreferenceSchema).optional(),
+  inviteePreferences: z.array(inviteePreferenceSchema).default([]),
 });
 
 export const shareMenuSchema = z.object({
