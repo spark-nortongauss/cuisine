@@ -9,19 +9,23 @@ export async function POST(_: Request, { params }: { params: Promise<{ shoppingL
     data: { user },
   } = await supabaseServer.auth.getUser();
 
-  const supabase = createSupabaseAdminClient();
-  const { data: list } = await supabase.from("shopping_lists").select("chef_user_id").eq("id", shoppingListId).single();
+  if (!user?.id) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
-  if (user?.id && list?.chef_user_id && list.chef_user_id !== user.id) {
+  const supabase = createSupabaseAdminClient();
+  const { data: list } = await supabase
+    .from("shopping_lists")
+    .select("id, menus(owner_id)")
+    .eq("id", shoppingListId)
+    .single();
+
+  const menu = Array.isArray(list?.menus) ? list?.menus[0] : list?.menus;
+  if (!menu || menu.owner_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await supabase
-    .from("shopping_lists")
-    .update({ status: "purchased", purchased_at: new Date().toISOString() })
-    .eq("id", shoppingListId);
+  const { error } = await supabase.from("shopping_items").update({ purchased: true }).eq("shopping_list_id", shoppingListId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ success: true });
 }

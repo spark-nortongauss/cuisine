@@ -14,6 +14,7 @@ export interface Dish {
   name: string;
   description: string;
   platingNotes: string;
+  decorationNotes?: string;
   beverageSuggestion?: string;
   imagePrompt: string;
 }
