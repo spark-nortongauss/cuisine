@@ -4,11 +4,11 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/sup
 import { fetchMenuWithOptions, normalizeMenuOptions } from "@/lib/menu-records";
 
 export async function POST(request: Request) {
-  const { menuId, menuGenerationId } = await request.json();
+  const { menuId, menuGenerationId, selectedOptionId } = await request.json();
   const effectiveMenuId = menuId ?? menuGenerationId;
 
   if (!effectiveMenuId) {
-    return NextResponse.json({ error: "menuId is required" }, { status: 400 });
+    return NextResponse.json({ success: false, code: "MISSING_MENU_ID", error: "menuId is required" }, { status: 400 });
   }
 
   const supabaseServer = await createSupabaseServerClient();
@@ -16,33 +16,62 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabaseServer.auth.getUser();
 
+  if (!user?.id) return NextResponse.json({ success: false, code: "UNAUTHENTICATED", error: "Authentication required" }, { status: 401 });
+
   const supabase = createSupabaseAdminClient();
   const { data: menu, error: menuError } = await fetchMenuWithOptions(effectiveMenuId);
 
   if (menuError || !menu) {
-    return NextResponse.json({ error: menuError?.message ?? "Menu not found" }, { status: 404 });
+    return NextResponse.json({ success: false, code: "MENU_NOT_FOUND", error: menuError?.message ?? "Menu not found" }, { status: 404 });
   }
 
-  if (user?.id && menu.chef_user_id && menu.chef_user_id !== user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (menu.owner_id !== user.id) {
+    return NextResponse.json({ success: false, code: "FORBIDDEN", error: "Forbidden" }, { status: 403 });
   }
 
   const options = normalizeMenuOptions(menu.menu_options ?? []);
-  const menuOption = options[0] ?? null;
+  const menuOption = options.find((option) => option.id === selectedOptionId) ?? options[0] ?? null;
 
-  if (!menuOption) return NextResponse.json({ error: "No menu option available" }, { status: 400 });
+  if (!menuOption) return NextResponse.json({ success: false, code: "NO_OPTION", error: "No menu option available" }, { status: 400 });
 
+  console.info("[cook-plan] generation start", { menuId: menu.id, optionId: menuOption.id });
   const payload = await generateCookPlanFromMenu(menuOption, menu.serve_at ?? new Date().toISOString());
 
-  const { error } = await supabase.from("cook_plans").upsert(
-    {
-      menu_id: menu.id,
-      chef_user_id: menu.chef_user_id,
-      payload,
-    },
-    { onConflict: "menu_id" },
+  const { data: cookPlan, error: cookPlanError } = await supabase
+    .from("cook_plans")
+    .upsert(
+      {
+        menu_id: menu.id,
+        overview: payload.overview,
+        mise_en_place: payload.mise_en_place,
+        plating_overview: payload.plating_overview,
+        service_notes: payload.service_notes,
+      },
+      { onConflict: "menu_id" },
+    )
+    .select("id")
+    .single();
+
+  if (cookPlanError || !cookPlan) {
+    return NextResponse.json({ success: false, code: "COOK_PLAN_UPSERT_FAILED", error: cookPlanError?.message ?? "Failed to upsert cook plan" }, { status: 500 });
+  }
+
+  await supabase.from("cook_steps").delete().eq("cook_plan_id", cookPlan.id);
+
+  const { error: stepError } = await supabase.from("cook_steps").insert(
+    payload.steps.map((step, index) => ({
+      cook_plan_id: cookPlan.id,
+      step_no: step.step_no || index + 1,
+      phase: step.phase,
+      title: step.title,
+      details: step.details,
+      dish_name: step.dish_name ?? null,
+      relative_minutes: step.relative_minutes ?? null,
+    })),
   );
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  if (stepError) return NextResponse.json({ success: false, code: "COOK_STEPS_INSERT_FAILED", error: stepError.message }, { status: 500 });
+
+  console.info("[cook-plan] generation end", { menuId: menu.id, cookPlanId: cookPlan.id, stepCount: payload.steps.length });
+  return NextResponse.json({ success: true, menuId: menu.id, cookPlanId: cookPlan.id });
 }

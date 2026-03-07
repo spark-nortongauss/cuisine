@@ -1,9 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 type ShoppingItem = {
@@ -17,16 +15,12 @@ type ShoppingItem = {
 
 type Props = {
   shoppingListId: string;
-  initialStatus: string;
   initialItems: ShoppingItem[];
 };
 
-export function ShoppingListDetail({ shoppingListId, initialItems, initialStatus }: Props) {
+export function ShoppingListDetail({ initialItems }: Props) {
   const [items, setItems] = useState(initialItems.map((item) => ({ ...item, purchased: Boolean(item.purchased) })));
-  const [status, setStatus] = useState(initialStatus);
   const [isSaving, setIsSaving] = useState<string | null>(null);
-  const [isMarkingPurchased, setIsMarkingPurchased] = useState(false);
-  const router = useRouter();
 
   const checkedCount = useMemo(() => items.filter((item) => item.purchased).length, [items]);
 
@@ -47,14 +41,12 @@ export function ShoppingListDetail({ shoppingListId, initialItems, initialStatus
     setIsSaving(null);
   }
 
-  async function markPurchased() {
-    setIsMarkingPurchased(true);
-    const res = await fetch(`/api/shopping/lists/${shoppingListId}/purchase`, { method: "POST" });
-    if (res.ok) {
-      setStatus("purchased");
-      router.refresh();
-    }
-    setIsMarkingPurchased(false);
+  if (!items.length) {
+    return (
+      <Card>
+        <p className="text-sm text-muted-foreground">No shopping items yet.</p>
+      </Card>
+    );
   }
 
   return (
@@ -71,13 +63,13 @@ export function ShoppingListDetail({ shoppingListId, initialItems, initialStatus
         <label key={item.id} className="flex cursor-pointer items-center justify-between rounded-2xl border border-border/70 bg-card/80 p-3 text-sm transition hover:border-primary/30">
           <div>
             <p className="font-medium">{item.item_name}</p>
-            <p className="text-xs text-muted-foreground">{item.section} · {item.quantity} {item.unit}</p>
+            <p className="text-xs text-muted-foreground">{item.section ?? "General"} · {item.quantity ?? "-"} {item.unit ?? ""}</p>
           </div>
           <input
             type="checkbox"
             checked={item.purchased}
             onChange={(event) => toggleItem(item.id, event.target.checked)}
-            disabled={isSaving === item.id || status === "purchased"}
+            disabled={isSaving === item.id}
             className="sr-only"
           />
           <span className="text-primary">
@@ -85,10 +77,6 @@ export function ShoppingListDetail({ shoppingListId, initialItems, initialStatus
           </span>
         </label>
       ))}
-
-      <Button className="w-full" onClick={markPurchased} disabled={status === "purchased" || isMarkingPurchased}>
-        {status === "purchased" ? "Shopping purchased" : "Mark shopping as purchased"}
-      </Button>
     </Card>
   );
 }

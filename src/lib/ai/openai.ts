@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { GenerateMenuInput, MenuOption } from "@/types/domain";
 import { z } from "zod";
+import { cookPlanAiSchema, formatMenuOptionForAi, shoppingItemAiSchema } from "@/lib/db-schema";
 
 let openAiClient: OpenAI | null = null;
 
@@ -22,8 +23,7 @@ async function requestStructuredJson<T>(prompt: string): Promise<T> {
     },
   });
 
-  const text = completion.output_text;
-  return JSON.parse(text) as T;
+  return JSON.parse(completion.output_text) as T;
 }
 
 const dishSchema = z.object({
@@ -31,6 +31,7 @@ const dishSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
   platingNotes: z.string().min(1),
+  decorationNotes: z.string().optional(),
   beverageSuggestion: z.string().min(1).optional(),
   imagePrompt: z.string().min(1),
 });
@@ -53,7 +54,7 @@ Service date/time: ${input.serveAt}.
 Guest count: ${input.inviteeCount}.
 Chef notes: ${input.notes || "none"}.
 Return ONLY valid JSON object with this shape:
-{"options":[{"id":"option-1","title":"...","concept":"...","dishes":[{"course":"...","name":"...","description":"...","platingNotes":"...","beverageSuggestion":"...","imagePrompt":"high quality image prompt"}]}]}
+{"options":[{"id":"option-1","title":"...","concept":"...","dishes":[{"course":"...","name":"...","description":"...","platingNotes":"...","decorationNotes":"...","beverageSuggestion":"...","imagePrompt":"high quality image prompt"}]}]}
 Ensure "options" contains exactly 3 menu options.`;
 
   const payload = await requestStructuredJson<{ options?: unknown } | MenuOption[]>(prompt);
@@ -61,38 +62,28 @@ Ensure "options" contains exactly 3 menu options.`;
   return menuGenerationSchema.parse({ options }).options;
 }
 
-export type ShoppingListAiItem = {
-  section: string;
-  item_name: string;
-  quantity: number;
-  unit: string;
-  notes?: string;
-};
+export type ShoppingListAiItem = z.infer<typeof shoppingItemAiSchema>;
 
-export type CookPlanPayload = {
-  prepSchedule: { slot: string; action: string }[];
-  miseEnPlace: string[];
-  timeline: { time: string; step: string }[];
-  serviceSequence: string[];
-  platingAssemblyNotes: string[];
-  assemblyDraft: string;
-  recipes: { dish: string; ingredients: string[]; method: string[] }[];
-};
+export type CookPlanPayload = z.infer<typeof cookPlanAiSchema>;
 
 export async function generateShoppingListFromMenu(menuOption: MenuOption, inviteeCount: number): Promise<ShoppingListAiItem[]> {
   const prompt = `You are a Michelin operations sous-chef. Build a consolidated shopping list for ${inviteeCount} guests.
-Menu: ${JSON.stringify(menuOption)}.
-Return ONLY JSON array with section, item_name, quantity(number), unit, notes.
-Merge duplicate ingredients and include practical purchasing units.`;
+Menu: ${JSON.stringify(formatMenuOptionForAi(menuOption))}.
+Return ONLY JSON object with key "items" where items is an array of objects:
+{"items":[{"section":"Produce","item_name":"Lemon","quantity":2,"unit":"kg","note":"zest and juice"}]}
+Use nullable quantity/unit/note when unknown.`;
 
-  return requestStructuredJson<ShoppingListAiItem[]>(prompt);
+  const payload = await requestStructuredJson<{ items?: unknown }>(prompt);
+  return z.array(shoppingItemAiSchema).parse(payload.items ?? []);
 }
 
 export async function generateCookPlanFromMenu(menuOption: MenuOption, serveAtIso: string): Promise<CookPlanPayload> {
   const prompt = `Create an execution-grade cook plan for this menu and service time ${serveAtIso}:
-${JSON.stringify(menuOption)}
-Return ONLY JSON object with keys: prepSchedule, miseEnPlace, timeline, serviceSequence, platingAssemblyNotes, assemblyDraft, recipes.
-recipes is an array with dish, ingredients[], method[].`;
+${JSON.stringify(formatMenuOptionForAi(menuOption))}
+Return ONLY JSON with keys:
+overview, mise_en_place, plating_overview, service_notes, steps.
+steps must be an array of objects with: step_no(integer), phase, title, details, dish_name(optional), relative_minutes(optional integer).`;
 
-  return requestStructuredJson<CookPlanPayload>(prompt);
+  const payload = await requestStructuredJson<unknown>(prompt);
+  return cookPlanAiSchema.parse(payload);
 }
