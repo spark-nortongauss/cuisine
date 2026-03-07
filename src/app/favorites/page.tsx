@@ -6,6 +6,9 @@ import { PageHero } from "@/components/ui/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
+import type { Database } from "@/lib/supabase/database.types";
+
+type FavoriteMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
 export default async function FavoritesPage() {
   const supabaseServer = await createSupabaseServerClient();
@@ -31,13 +34,16 @@ export default async function FavoritesPage() {
         {(data ?? []).length ? (
           data?.map((favorite) => {
             const menu = Array.isArray(favorite.menus) ? favorite.menus[0] : favorite.menus;
+            const menuOptions: FavoriteMenuOptionRow[] = (menu?.menu_options ?? []) as FavoriteMenuOptionRow[];
+            const approvedOption: FavoriteMenuOptionRow | null = menuOptions.find((option: FavoriteMenuOptionRow) => option.id === menu?.approved_option_id) ?? null;
+
             return (
               <Link key={favorite.menu_id} href={`/favorites/${favorite.menu_id}`} className="block">
                 <Card className="group overflow-hidden transition hover:-translate-y-1 hover:shadow-glow">
                   <div className="grid gap-4 md:grid-cols-[1.2fr_1fr] md:items-center">
                     <div className="space-y-2">
                       <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{menu?.meal_type ?? "Service"}</p>
-                      <h2 className="font-serif text-3xl">{resolveMenuDisplayTitle(menu, (menu?.menu_options ?? []).find((option) => option.id === menu?.approved_option_id) ?? null)}</h2>
+                      <h2 className="font-serif text-3xl">{resolveMenuDisplayTitle(menu, approvedOption)}</h2>
                       <p className="text-sm text-muted-foreground">{favorite.people_count ?? "-"} people · {favorite.served_on ?? "unspecified date"}</p>
                     </div>
                     <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-muted/30 to-card p-4">
