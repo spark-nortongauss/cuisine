@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
+import { I18nProvider } from "@/components/i18n/i18n-provider";
+import { getServerDirection, getServerLocale } from "@/lib/i18n/server";
 
 const display = Cormorant_Garamond({
   subsets: ["latin"],
@@ -15,11 +17,16 @@ export const metadata: Metadata = {
   description: "Premium AI menu operations for chefs",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getServerLocale();
+  const direction = getServerDirection(locale);
+
   return (
-    <html lang="en">
+    <html lang={locale} dir={direction}>
       <body className={`${display.variable} ${sans.variable} font-sans`}>
-        <AppShell>{children}</AppShell>
+        <I18nProvider locale={locale}>
+          <AppShell>{children}</AppShell>
+        </I18nProvider>
       </body>
     </html>
   );

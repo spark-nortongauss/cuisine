@@ -1,0 +1,6 @@
+const es = {
+  app: { brandTop: "Gastronómico", brandBottom: "Cuisine", nav: { dashboard: "Panel", generate: "Generar", approval: "Aprobación", shopping: "Compras", cook: "Cocina", favorites: "Favoritos" }, logout: "Cerrar sesión", locale: "Idioma" },
+  common: { mealFallback: "Servicio", noDate: "Sin fecha de servicio", ready: "Listo", noData: "Sin datos", table: { menu: "Menú", meal: "Comida", service: "Servicio", updated: "Actualizado", generated: "Generado", readiness: "Estado", items: "Ítems", progress: "Progreso" } },
+  cook: { heroEyebrow: "Cronograma de servicio", indexTitle: "Servicios listos para cocinar", indexDescription: "Aquí se muestran los menús con plan de cocina generado.", noPlans: "Aún no hay planes de cocina. Valida un menú para generar uno.", noPlanForMenu: "No existe un plan de cocina para este menú.", overview: "Resumen", timeline: "Cronograma de cocina", plating: "Emplatado", serviceNotes: "Notas de servicio", miseEnPlace: "Mise en place", noOverview: "Sin resumen disponible.", noMise: "Sin guía de mise en place.", noPlating: "Sin resumen de emplatado.", noServiceNotes: "Sin notas de servicio.", noSteps: "No hay pasos generados.", dish: "Plato", step: "Paso", objective: "Objetivo", duration: "Duración", tools: "Herramientas", warning: "Advertencia" }
+};
+export default es;

@@ -4,6 +4,7 @@ import { PageHero } from "@/components/ui/page-hero";
 import { PageTransition } from "@/components/layout/page-transition";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
+import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
 
 type MenuOption = {
   id: number;
@@ -12,6 +13,8 @@ type MenuOption = {
 };
 
 export default async function CookIndexPage() {
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
   const supabaseServer = await createSupabaseServerClient();
   const {
     data: { user },
@@ -30,11 +33,7 @@ export default async function CookIndexPage() {
 
   return (
     <PageTransition>
-      <PageHero
-        eyebrow="Service Timeline"
-        title="Cook-ready services"
-        description="Menus with generated cook plans are listed here."
-      />
+      <PageHero eyebrow={t("cook.heroEyebrow")} title={t("cook.indexTitle")} description={t("cook.indexDescription")} />
 
       <div className="space-y-3">
         {visibleEntries.length ? (
@@ -42,11 +41,11 @@ export default async function CookIndexPage() {
             <table className="w-full min-w-[760px] border-separate border-spacing-y-2 text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-[0.15em] text-muted-foreground">
-                  <th className="px-3 py-2">Menu</th>
-                  <th className="px-3 py-2">Meal</th>
-                  <th className="px-3 py-2">Service</th>
-                  <th className="px-3 py-2">Generated</th>
-                  <th className="px-3 py-2">Readiness</th>
+                  <th className="px-3 py-2">{t("common.table.menu")}</th>
+                  <th className="px-3 py-2">{t("common.table.meal")}</th>
+                  <th className="px-3 py-2">{t("common.table.service")}</th>
+                  <th className="px-3 py-2">{t("common.table.generated")}</th>
+                  <th className="px-3 py-2">{t("common.table.readiness")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -58,10 +57,10 @@ export default async function CookIndexPage() {
                       <td className="px-3 py-3 font-medium text-primary underline-offset-4 hover:underline">
                         <Link href={`/cook/${entry.menu_id}`}>{resolveMenuDisplayTitle(menu, approvedOption)}</Link>
                       </td>
-                      <td className="px-3 py-3">{menu?.meal_type ?? "Service"}</td>
-                      <td className="px-3 py-3">{menu?.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}</td>
-                      <td className="px-3 py-3">{new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(entry.updated_at ?? entry.created_at))}</td>
-                      <td className="px-3 py-3"><span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Ready</span></td>
+                      <td className="px-3 py-3">{menu?.meal_type ?? t("common.mealFallback")}</td>
+                      <td className="px-3 py-3">{menu?.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}</td>
+                      <td className="px-3 py-3">{formatWithLocale(locale, new Date(entry.updated_at ?? entry.created_at), { dateStyle: "medium" })}</td>
+                      <td className="px-3 py-3"><span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("common.ready")}</span></td>
                     </tr>
                   );
                 })}
@@ -70,7 +69,7 @@ export default async function CookIndexPage() {
           </Card>
         ) : (
           <Card>
-            <p className="text-sm text-muted-foreground">No cook plans yet. Validate a menu to generate one.</p>
+            <p className="text-sm text-muted-foreground">{t("cook.noPlans")}</p>
           </Card>
         )}
       </div>

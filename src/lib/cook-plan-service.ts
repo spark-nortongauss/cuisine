@@ -3,6 +3,34 @@ import { normalizeMenuOptions } from "@/lib/menu-records";
 import { resolveCanonicalMenuTitleFromOption } from "@/lib/menu-display";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
+
+type CookStepPayload = {
+  step_no: number;
+  phase: string;
+  title: string;
+  details: string;
+  dish_name?: string | null;
+  relative_minutes?: number | null;
+};
+
+function normalizeCookStep(step: CookStepPayload, index: number): CookStepPayload {
+  const cleanedDetails = step.details
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    step_no: Number.isInteger(step.step_no) && step.step_no > 0 ? step.step_no : index + 1,
+    phase: step.phase.trim() || "cooking phase",
+    title: step.title.trim() || `Step ${index + 1}`,
+    details: cleanedDetails || step.details.trim(),
+    dish_name: step.dish_name?.trim() || null,
+    relative_minutes: Number.isInteger(step.relative_minutes ?? null) ? step.relative_minutes ?? null : null,
+  };
+}
+
+
 export async function generateCookPlanForMenu({
   menuId,
   ownerId,
@@ -46,7 +74,7 @@ export async function generateCookPlanForMenu({
       .eq("shopping_list_id", shoppingList.id)
     : { data: [] as Array<{ section: string | null; item_name: string | null; quantity: number | null; unit: string | null; note: string | null; purchased: boolean | null }> };
 
-  const payload = await generateCookPlanFromMenu(
+  const rawPayload = await generateCookPlanFromMenu(
     selected,
     menu.serve_at ?? new Date().toISOString(),
     (shoppingItems ?? []).map((item) => ({
@@ -58,6 +86,10 @@ export async function generateCookPlanForMenu({
       purchased: item.purchased,
     })),
   );
+
+  const normalizedSteps = rawPayload.steps.map((step, index) => normalizeCookStep(step, index));
+
+  const payload = { ...rawPayload, steps: normalizedSteps };
 
   const { data: cookPlan, error: cookPlanError } = await supabase
     .from("cook_plans")

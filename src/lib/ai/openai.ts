@@ -100,13 +100,35 @@ export async function generateCookPlanFromMenu(
     ? `Shopping list context: ${JSON.stringify(shoppingItems)}.`
     : "Shopping list context: none provided.";
 
-  const prompt = `Create an execution-grade cook plan for this menu and service time ${serveAtIso}:
-${JSON.stringify(formatMenuOptionForAi(menuOption))}
+  const prompt = `You are an expert executive sous-chef writing an operational cookbook for a complete beginner.
+Service datetime (ISO): ${serveAtIso}
+Selected approved menu option: ${JSON.stringify(formatMenuOptionForAi(menuOption))}
 ${shoppingContext}
-Return ONLY JSON with keys:
-overview, mise_en_place, plating_overview, service_notes, steps.
-steps must be an array of objects with: step_no(integer), phase, title, details, dish_name(optional), relative_minutes(optional integer).
-Ensure timeline begins with prep and ends at service/plating, with practical operational detail.`;
+
+Return ONLY valid JSON with keys:
+- overview
+- mise_en_place
+- plating_overview
+- service_notes
+- steps
+
+Rules:
+1) Keep language practical, imperative, and beginner-safe.
+2) Use explicit timeline phases in steps.phase such as: day-before prep, mise-en-place, cooking phase, resting/holding, plating, service.
+3) steps must be an ordered array where each item has: step_no (int), phase, title, details, dish_name(optional), relative_minutes(optional int).
+4) details must be rich and structured in readable bullet-like lines including (when relevant):
+   - objective
+   - required ingredients/tools
+   - exact actions
+   - approximate duration
+   - heat/temperature guidance
+   - visual/texture cue of doneness
+   - common mistakes warning
+   - advance prep vs last-minute action
+5) relative_minutes should be tied to service time, negative for before service and 0 at service.
+6) End with explicit plating and final service sequence.
+7) Avoid vague phrasing like "cook until done"; always include practical cues.
+8) Keep output schema-compatible and deterministic.`;
 
   const payload = await requestStructuredJson<unknown>(prompt);
   return cookPlanAiSchema.parse(payload);
