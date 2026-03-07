@@ -10,24 +10,26 @@ type ShoppingItem = {
   item_name: string | null;
   quantity: number | null;
   unit: string | null;
+  note?: string | null;
   purchased: boolean | null;
 };
 
 type Props = {
-  shoppingListId: string;
   initialItems: ShoppingItem[];
 };
 
 export function ShoppingListDetail({ initialItems }: Props) {
   const [items, setItems] = useState(initialItems.map((item) => ({ ...item, purchased: Boolean(item.purchased) })));
   const [isSaving, setIsSaving] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const checkedCount = useMemo(() => items.filter((item) => item.purchased).length, [items]);
 
   async function toggleItem(itemId: string, purchased: boolean) {
-    const before = items;
+    const previousValue = items.find((item) => item.id === itemId)?.purchased ?? false;
     setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, purchased } : item)));
     setIsSaving(itemId);
+    setError(null);
 
     const res = await fetch(`/api/shopping/items/${itemId}`, {
       method: "PATCH",
@@ -36,7 +38,8 @@ export function ShoppingListDetail({ initialItems }: Props) {
     });
 
     if (!res.ok) {
-      setItems(before);
+      setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, purchased: previousValue } : item)));
+      setError("Could not update one item. Please try again.");
     }
     setIsSaving(null);
   }
@@ -60,10 +63,11 @@ export function ShoppingListDetail({ initialItems }: Props) {
       </div>
 
       {items.map((item) => (
-        <label key={item.id} className="flex cursor-pointer items-center justify-between rounded-2xl border border-border/70 bg-card/80 p-3 text-sm transition hover:border-primary/30">
-          <div>
+        <label key={item.id} className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/80 p-3 text-sm transition hover:border-primary/30">
+          <div className="space-y-1">
             <p className="font-medium">{item.item_name}</p>
             <p className="text-xs text-muted-foreground">{item.section ?? "General"} · {item.quantity ?? "-"} {item.unit ?? ""}</p>
+            {item.note ? <p className="text-xs text-muted-foreground">Note: {item.note}</p> : null}
           </div>
           <input
             type="checkbox"
@@ -77,6 +81,8 @@ export function ShoppingListDetail({ initialItems }: Props) {
           </span>
         </label>
       ))}
+
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </Card>
   );
 }

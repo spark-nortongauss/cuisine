@@ -3,6 +3,20 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { ApprovedMenusTable } from "@/components/modules/approved-menus-table";
+
+const APPROVED_STATUSES = new Set(["approved", "validated", "selected"]);
+
+type ApprovedMenuView = {
+  id: string;
+  title: string;
+  mealType: string;
+  serveAt: string | null;
+  inviteeCount: number | null;
+  status: string;
+  approvedOptionTitle: string;
+  updatedAt: string;
+};
 
 export default async function ApprovalDashboardPage() {
   const supabaseServer = await createSupabaseServerClient();
@@ -13,27 +27,40 @@ export default async function ApprovalDashboardPage() {
   const supabase = createSupabaseAdminClient();
   const { data: menus } = await supabase
     .from("menus")
-    .select("id, title, status, serve_at, meal_type, approved_option_id")
+    .select("id, title, status, serve_at, meal_type, invitee_count, approved_option_id, updated_at, menu_options(id, title, michelin_name)")
     .eq("owner_id", user?.id ?? "")
-    .not("approved_option_id", "is", null)
-    .order("updated_at", { ascending: false })
-    .limit(6);
+    .order("updated_at", { ascending: false });
 
-  const approvedCount = (menus ?? []).length;
-  const validatedCount = (menus ?? []).filter((menu) => menu.status === "validated").length;
+  const approvedMenus: ApprovedMenuView[] = (menus ?? [])
+    .filter((menu) => menu.approved_option_id || APPROVED_STATUSES.has(menu.status))
+    .map((menu) => {
+      const approvedOption = (menu.menu_options ?? []).find((option) => option.id === menu.approved_option_id);
+      return {
+        id: menu.id,
+        title: menu.title ?? "Untitled menu",
+        mealType: menu.meal_type ?? "Service",
+        serveAt: menu.serve_at,
+        inviteeCount: menu.invitee_count,
+        status: menu.status,
+        approvedOptionTitle: approvedOption?.title ?? approvedOption?.michelin_name ?? "Selected option",
+        updatedAt: menu.updated_at,
+      };
+    });
+
+  const validatedCount = approvedMenus.filter((menu) => menu.status === "validated").length;
 
   const stats = [
-    { label: "Approved", value: String(approvedCount), icon: Users },
+    { label: "Approved", value: String(approvedMenus.length), icon: Users },
     { label: "Validated", value: String(validatedCount), icon: CheckCircle2 },
-    { label: "Leader", value: approvedCount ? "Option selected" : "Pending", icon: Trophy },
+    { label: "Leader", value: approvedMenus.length ? "Option selected" : "Pending", icon: Trophy },
   ];
 
   return (
     <PageTransition>
       <PageHero
         eyebrow="Approval Intelligence"
-        title="Monitor consensus with confidence"
-        description="Track selected options and move quickly into validated shopping and cook operations."
+        title="Approved menus"
+        description="Review approved services, open full menu details, and remove cancelled plans safely."
       />
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -45,26 +72,13 @@ export default async function ApprovalDashboardPage() {
         ))}
       </div>
 
-      <Card variant="feature" className="space-y-4">
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Selected menus</p>
-          {(menus ?? []).length ? (
-            <div className="space-y-2">
-              {(menus ?? []).map((menu) => (
-                <div key={menu.id} className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/70 px-3 py-2 text-sm">
-                  <div>
-                    <p className="font-medium">{menu.title ?? "Untitled menu"}</p>
-                    <p className="text-xs text-muted-foreground">{menu.meal_type ?? "Service"} · {menu.status}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{menu.serve_at ? new Date(menu.serve_at).toLocaleDateString() : "No date"}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground"><Clock3 size={14} />No selected menus yet. Select an option on Generate to approve it.</p>
-          )}
-        </div>
-      </Card>
+      {approvedMenus.length ? (
+        <ApprovedMenusTable rows={approvedMenus} />
+      ) : (
+        <Card>
+          <p className="flex items-center gap-2 text-sm text-muted-foreground"><Clock3 size={14} />No approved menus yet. Select an option on Generate to approve it.</p>
+        </Card>
+      )}
     </PageTransition>
   );
 }
