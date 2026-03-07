@@ -1,12 +1,26 @@
 import { notFound } from "next/navigation";
+import { Clock3, CookingPot } from "lucide-react";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
+import { CollapsibleSections } from "@/components/ui/collapsible-section";
+import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
+import { Badge } from "@/components/ui/badge";
+
+function splitDetailPoints(details: string) {
+  return details
+    .split(/\n|•|\-/g)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
 
 export default async function CookPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
+
   const supabaseServer = await createSupabaseServerClient();
   const {
     data: { user },
@@ -31,12 +45,12 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
     return (
       <PageTransition>
         <PageHero
-          eyebrow="Service Timeline"
+          eyebrow={t("cook.heroEyebrow")}
           title={displayTitle}
-          description={menu.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}
+          description={menu.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}
         />
         <Card>
-          <p className="text-sm text-muted-foreground">No cook plan exists for this menu yet.</p>
+          <p className="text-sm text-muted-foreground">{t("cook.noPlanForMenu")}</p>
         </Card>
       </PageTransition>
     );
@@ -49,44 +63,68 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
     .order("relative_minutes", { ascending: true, nullsFirst: true })
     .order("step_no", { ascending: true });
 
+  const sections = [
+    {
+      id: "overview",
+      title: t("cook.overview"),
+      content: (
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <p>{cookPlan.overview ?? t("cook.noOverview")}</p>
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em]">{t("cook.miseEnPlace")}</p>
+            <p className="mt-1 text-sm text-foreground">{cookPlan.mise_en_place ?? t("cook.noMise")}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "timeline",
+      title: t("cook.timeline"),
+      content: (
+        <div className="space-y-3">
+          {(steps ?? []).map((step) => {
+            const detailPoints = splitDetailPoints(step.details);
+            return (
+              <div key={step.id} className="rounded-xl border border-border/60 bg-card/70 p-4">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <Badge variant="accent">{step.relative_minutes !== null ? `T${step.relative_minutes >= 0 ? "+" : ""}${step.relative_minutes} min` : `${t("cook.step")} ${step.step_no}`}</Badge>
+                  <Badge variant="outline">{step.phase}</Badge>
+                  {step.dish_name ? <Badge variant="success">{t("cook.dish")}: {step.dish_name}</Badge> : null}
+                </div>
+                <p className="font-medium text-foreground">{step.title}</p>
+                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                  {detailPoints.map((line) => (
+                    <li key={`${step.id}-${line}`} className="flex items-start gap-2"><CookingPot size={14} className="mt-0.5 text-primary" /> <span>{line}</span></li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+          {!steps?.length ? <p className="text-sm text-muted-foreground">{t("cook.noSteps")}</p> : null}
+        </div>
+      ),
+    },
+    {
+      id: "plating",
+      title: t("cook.plating"),
+      content: <p className="text-sm text-muted-foreground">{cookPlan.plating_overview ?? t("cook.noPlating")}</p>,
+    },
+    {
+      id: "service",
+      title: t("cook.serviceNotes"),
+      content: <p className="text-sm text-muted-foreground">{cookPlan.service_notes ?? t("cook.noServiceNotes")}</p>,
+    },
+  ];
+
   return (
     <PageTransition>
       <PageHero
-        eyebrow="Service Timeline"
+        eyebrow={t("cook.heroEyebrow")}
         title={displayTitle}
-        description={menu.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}
+        description={menu.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}
       />
-
-      <div className="space-y-3">
-        <Card>
-          <h2 className="font-serif text-2xl">Overview</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{cookPlan.overview ?? "No overview available."}</p>
-          <p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">Mise en place</p>
-          <p className="mt-1 text-sm">{cookPlan.mise_en_place ?? "No mise en place guidance."}</p>
-        </Card>
-
-        <Card>
-          <h2 className="font-serif text-2xl">Detailed timeline</h2>
-          <div className="mt-3 space-y-2 text-sm">
-            {(steps ?? []).map((step) => (
-              <div key={step.id} className="rounded-xl border border-border/60 p-3">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{step.relative_minutes !== null ? `T${step.relative_minutes >= 0 ? "+" : ""}${step.relative_minutes} min` : `Step ${step.step_no}`}</p>
-                <p><strong>#{step.step_no}</strong> · {step.phase}</p>
-                <p className="font-medium">{step.title}</p>
-                <p className="text-muted-foreground">{step.details}</p>
-                {step.dish_name ? <p className="text-xs text-muted-foreground">Dish: {step.dish_name}</p> : null}
-              </div>
-            ))}
-            {!steps?.length ? <p className="text-muted-foreground">No steps generated.</p> : null}
-          </div>
-        </Card>
-
-        <Card>
-          <h2 className="font-serif text-2xl">Plating & service notes</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{cookPlan.plating_overview ?? "No plating overview."}</p>
-          <p className="mt-2 text-sm">{cookPlan.service_notes ?? "No service notes."}</p>
-        </Card>
-      </div>
+      <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground"><Clock3 size={14} />{t("cook.timeline")}</div>
+      <CollapsibleSections sections={sections} defaultOpen={["overview", "timeline"]} />
     </PageTransition>
   );
 }

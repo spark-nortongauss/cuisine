@@ -1,0 +1,6 @@
+const hi = {
+  app: { brandTop: "गैस्ट्रोनॉमिक", brandBottom: "क्यूज़ीन", nav: { dashboard: "डैशबोर्ड", generate: "जेनरेट", approval: "अनुमोदन", shopping: "खरीदारी", cook: "कुक", favorites: "फेवरिट्स" }, logout: "लॉगआउट", locale: "भाषा" },
+  common: { mealFallback: "सेवा", noDate: "सेवा समय उपलब्ध नहीं", ready: "तैयार", noData: "कोई डेटा नहीं", table: { menu: "मेनू", meal: "भोजन", service: "सेवा", updated: "अपडेट", generated: "जनरेट", readiness: "तैयारी", items: "आइटम", progress: "प्रगति" } },
+  cook: { heroEyebrow: "सर्विस टाइमलाइन", indexTitle: "कुक-रेडी सर्विस", indexDescription: "जिन मेनू के लिए कुक प्लान बना है वे यहाँ दिखेंगे।", noPlans: "अभी कोई कुक प्लान नहीं है। प्लान बनाने के लिए मेनू वैलिडेट करें।", noPlanForMenu: "इस मेनू के लिए अभी कुक प्लान नहीं है।", overview: "ओवरव्यू", timeline: "कुक टाइमलाइन", plating: "प्लेटिंग", serviceNotes: "सर्विस नोट्स", miseEnPlace: "मिज़-ऑन-प्लास", noOverview: "ओवरव्यू उपलब्ध नहीं।", noMise: "मिज़-ऑन-प्लास गाइड नहीं।", noPlating: "प्लेटिंग ओवरव्यू नहीं।", noServiceNotes: "सर्विस नोट्स नहीं।", noSteps: "कोई स्टेप नहीं बना।", dish: "डिश", step: "स्टेप", objective: "उद्देश्य", duration: "अवधि", tools: "उपकरण", warning: "चेतावनी" }
+};
+export default hi;

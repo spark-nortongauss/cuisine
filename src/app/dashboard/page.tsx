@@ -3,6 +3,7 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { Badge } from "@/components/ui/badge";
+import { getServerLocale, getServerT } from "@/lib/i18n/server";
 
 const pillars = [
   {
@@ -22,13 +23,15 @@ const pillars = [
   },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
   return (
     <PageTransition>
       <PageHero
-        eyebrow="Executive kitchen operations"
-        title="Design world-class dining moments from one premium workspace"
-        description="Generate Michelin-level menus, orchestrate invitee consensus, and execute service with confidence across every station."
+        eyebrow={t("dashboard.eyebrow", "Executive kitchen operations")}
+        title={t("dashboard.title", "Design world-class dining moments from one premium workspace")}
+        description={t("dashboard.description", "Generate Michelin-level menus, orchestrate invitee consensus, and execute service with confidence across every station.")}
         chips={["Luxury Hospitality", "AI Culinary Intelligence", "Enterprise Clarity"]}
       />
 
@@ -49,10 +52,10 @@ export default function DashboardPage() {
 
       <Card variant="feature" className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Today</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("dashboard.today", "Today")}</p>
           <p className="font-serif text-3xl">6 invitees · 3 curated options · 1 final service</p>
         </div>
-        <Badge variant="success">Workflow healthy</Badge>
+        <Badge variant="success">{t("dashboard.workflowHealthy", "Workflow healthy")}</Badge>
       </Card>
     </PageTransition>
   );

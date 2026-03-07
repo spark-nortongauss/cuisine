@@ -6,15 +6,8 @@ import { motion } from "framer-motion";
 import { ChefHat, Heart, LayoutDashboard, ListChecks, Sparkles, Timer, Vote } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/generate", label: "Generate", icon: Sparkles },
-  { href: "/approval", label: "Approval", icon: Vote },
-  { href: "/shopping", label: "Shopping", icon: ListChecks },
-  { href: "/cook", label: "Cook", icon: Timer },
-  { href: "/favorites", label: "Favorites", icon: Heart },
-];
+import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
+import { useI18n } from "@/components/i18n/i18n-provider";
 
 function isPublicLayout(pathname: string | null) {
   if (!pathname) return false;
@@ -25,6 +18,16 @@ function isPublicLayout(pathname: string | null) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const publicLayout = isPublicLayout(pathname);
+  const { t } = useI18n();
+
+  const navItems = [
+    { href: "/dashboard", label: t("app.nav.dashboard", "Dashboard"), icon: LayoutDashboard },
+    { href: "/generate", label: t("app.nav.generate", "Generate"), icon: Sparkles },
+    { href: "/approval", label: t("app.nav.approval", "Approval"), icon: Vote },
+    { href: "/shopping", label: t("app.nav.shopping", "Shopping"), icon: ListChecks },
+    { href: "/cook", label: t("app.nav.cook", "Cook"), icon: Timer },
+    { href: "/favorites", label: t("app.nav.favorites", "Favorites"), icon: Heart },
+  ];
 
   return (
     <div className="luxury-shell min-h-screen pb-24">
@@ -35,11 +38,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <ChefHat size={16} />
             </span>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Gastronomic</p>
-              <p className="font-serif text-xl leading-none">Cuisine</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("app.brandTop", "Gastronomic")}</p>
+              <p className="font-serif text-xl leading-none">{t("app.brandBottom", "Cuisine")}</p>
             </div>
           </div>
-          <LogoutButton />
+          <div className="flex items-center gap-2">
+            <LocaleSwitcher />
+            <LogoutButton />
+          </div>
         </header>
       ) : null}
       <main className="mx-auto max-w-6xl p-4 md:p-8">{children}</main>

@@ -1,0 +1,6 @@
+const ar = {
+  app: { brandTop: "فنون الطهي", brandBottom: "كوزين", nav: { dashboard: "لوحة التحكم", generate: "إنشاء", approval: "الموافقة", shopping: "التسوق", cook: "الطهي", favorites: "المفضلة" }, logout: "تسجيل الخروج", locale: "اللغة" },
+  common: { mealFallback: "الخدمة", noDate: "لا يوجد موعد خدمة", ready: "جاهز", noData: "لا توجد بيانات", table: { menu: "القائمة", meal: "الوجبة", service: "الخدمة", updated: "محدّث", generated: "تم الإنشاء", readiness: "الجاهزية", items: "العناصر", progress: "التقدم" } },
+  cook: { heroEyebrow: "الخط الزمني للخدمة", indexTitle: "خدمات جاهزة للطهي", indexDescription: "القوائم التي تحتوي على خطة طهي مولّدة تظهر هنا.", noPlans: "لا توجد خطط طهي بعد. قم باعتماد قائمة لإنشاء واحدة.", noPlanForMenu: "لا توجد خطة طهي لهذه القائمة بعد.", overview: "نظرة عامة", timeline: "الخط الزمني للطهي", plating: "التقديم", serviceNotes: "ملاحظات الخدمة", miseEnPlace: "التحضير المسبق", noOverview: "لا توجد نظرة عامة.", noMise: "لا توجد إرشادات تحضير.", noPlating: "لا توجد إرشادات تقديم.", noServiceNotes: "لا توجد ملاحظات خدمة.", noSteps: "لا توجد خطوات مولّدة.", dish: "الطبق", step: "خطوة", objective: "الهدف", duration: "المدة", tools: "الأدوات", warning: "تحذير" }
+};
+export default ar;

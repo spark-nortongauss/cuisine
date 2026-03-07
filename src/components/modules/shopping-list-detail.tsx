@@ -5,6 +5,7 @@ import { CheckCircle2, Circle, Loader2, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n/i18n-provider";
 
 type ShoppingItem = {
   id: string;
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export function ShoppingListDetail({ menuId, initialItems }: Props) {
+  const { t } = useI18n();
   const router = useRouter();
   const [items, setItems] = useState(initialItems.map((item) => ({ ...item, purchased: Boolean(item.purchased) })));
   const [isSaving, setIsSaving] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
 
     if (!res.ok) {
       setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, purchased: previousValue } : item)));
-      setError("Could not update one item. Please try again.");
+      setError(t("shopping.updateItemError", "Could not update one item. Please try again."));
     }
     setIsSaving(null);
   }
@@ -60,7 +62,7 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
 
     if (!res.ok) {
       const payload = (await res.json().catch(() => null)) as { error?: string } | null;
-      setError(payload?.error ?? "Could not generate cooking timeline. Please try again.");
+      setError(payload?.error ?? t("shopping.generateCookingError", "Could not generate cooking timeline. Please try again."));
       setIsGenerating(false);
       return;
     }
@@ -72,7 +74,7 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
   if (!items.length) {
     return (
       <Card>
-        <p className="text-sm text-muted-foreground">No shopping items yet.</p>
+        <p className="text-sm text-muted-foreground">{t("shopping.noItems", "No shopping items yet.")}</p>
       </Card>
     );
   }
@@ -80,8 +82,8 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
   return (
     <Card className="space-y-4">
       <div className="sticky top-3 z-10 rounded-2xl border border-border/70 bg-card/90 p-3 backdrop-blur">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Progress</p>
-        <p className="font-serif text-2xl">{checkedCount} / {items.length} purchased</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("common.table.progress", "Progress")}</p>
+        <p className="font-serif text-2xl">{checkedCount} / {items.length} {t("shopping.purchased", "purchased")}</p>
         <div className="mt-2 h-2 rounded-full bg-muted">
           <div className="h-2 rounded-full bg-success" style={{ width: `${items.length ? (checkedCount / items.length) * 100 : 0}%` }} />
         </div>
@@ -89,12 +91,12 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
             {allPurchased
-              ? "All items purchased. You can now generate your cooking execution timeline."
-              : "Generate Cooking unlocks when every shopping item is purchased."}
+              ? t("shopping.allPurchased", "All items purchased. You can now generate your cooking execution timeline.")
+              : t("shopping.lockedGenerateCooking", "Generate Cooking unlocks when every shopping item is purchased.")}
           </p>
           <Button onClick={generateCooking} disabled={!allPurchased || isGenerating}>
             {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-            Generate Cooking
+            {t("shopping.generateCooking", "Generate Cooking")}
           </Button>
         </div>
       </div>
@@ -103,8 +105,8 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
         <label key={item.id} className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/80 p-3 text-sm transition hover:border-primary/30">
           <div className="space-y-1">
             <p className="font-medium">{item.item_name}</p>
-            <p className="text-xs text-muted-foreground">{item.section ?? "General"} · {item.quantity ?? "-"} {item.unit ?? ""}</p>
-            {item.note ? <p className="text-xs text-muted-foreground">Note: {item.note}</p> : null}
+            <p className="text-xs text-muted-foreground">{item.section ?? t("shopping.general", "General")} · {item.quantity ?? "-"} {item.unit ?? ""}</p>
+            {item.note ? <p className="text-xs text-muted-foreground">{t("shopping.note", "Note")}: {item.note}</p> : null}
           </div>
           <input
             type="checkbox"
