@@ -18,7 +18,8 @@ const navItems = [
 
 function isPublicLayout(pathname: string | null) {
   if (!pathname) return false;
-  return pathname === "/login" || pathname.startsWith("/approval/") || pathname.startsWith("/feedback/");
+  const isApprovalTokenRoute = /^\/approval\/[^/]+$/.test(pathname);
+  return pathname === "/login" || isApprovalTokenRoute || pathname.startsWith("/feedback/");
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {

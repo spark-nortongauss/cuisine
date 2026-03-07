@@ -15,7 +15,11 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
 
   const supabase = createSupabaseAdminClient();
 
-  const { data: menu } = await supabase.from("menus").select("id, owner_id, title, meal_type, serve_at").eq("id", menuId).single();
+  const { data: menu } = await supabase
+    .from("menus")
+    .select("id, owner_id, title, meal_type, serve_at, invitee_count, restrictions")
+    .eq("id", menuId)
+    .single();
 
   if (!menu) return notFound();
   if (user?.id && menu.owner_id !== user.id) return notFound();
@@ -30,7 +34,7 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
       <PageTransition>
         <PageHero eyebrow="Operational Workspace" title={title} description={subtitle} />
         <Card>
-          <p className="text-sm text-muted-foreground">No shopping list exists for this menu yet. Validate the menu to generate one.</p>
+          <p className="text-sm text-muted-foreground">Shopping list not generated yet. Open this menu from Approval and click “Shopping List”.</p>
         </Card>
       </PageTransition>
     );
@@ -38,14 +42,19 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
 
   const { data: items } = await supabase
     .from("shopping_items")
-    .select("id, section, item_name, quantity, unit, purchased")
+    .select("id, section, item_name, quantity, unit, note, purchased")
     .eq("shopping_list_id", shoppingList.id)
     .order("sort_order", { ascending: true });
 
   return (
     <PageTransition>
       <PageHero eyebrow="Operational Workspace" title={title} description={subtitle} />
-      <ShoppingListDetail shoppingListId={shoppingList.id} initialItems={items ?? []} />
+      <Card>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Menu context</p>
+        <p className="mt-2 text-sm">Invitees: {menu.invitee_count ?? "-"}</p>
+        <p className="text-sm">Restrictions: {menu.restrictions?.length ? menu.restrictions.join(", ") : "None"}</p>
+      </Card>
+      <ShoppingListDetail initialItems={items ?? []} />
     </PageTransition>
   );
 }

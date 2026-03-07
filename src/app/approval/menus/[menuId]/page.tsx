@@ -1,0 +1,132 @@
+import { notFound } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { PageHero } from "@/components/ui/page-hero";
+import { PageTransition } from "@/components/layout/page-transition";
+import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { ShoppingListButton } from "@/components/modules/shopping-list-button";
+
+export default async function ApprovedMenuDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
+  const { menuId } = await params;
+
+  const supabaseServer = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+
+  const supabase = createSupabaseAdminClient();
+
+  const { data: menu } = await supabase
+    .from("menus")
+    .select("id, owner_id, title, meal_type, serve_at, invitee_count, restrictions, notes, status, approved_option_id")
+    .eq("id", menuId)
+    .maybeSingle();
+
+  if (!menu) return notFound();
+  if (!user?.id || menu.owner_id !== user.id) return notFound();
+  if (!menu.approved_option_id) return notFound();
+
+  const [{ data: approvedOption }, { data: dishes }, { data: cookPlan }, { data: shoppingList }] = await Promise.all([
+    supabase
+      .from("menu_options")
+      .select("id, title, michelin_name, concept_summary, concept, chef_notes, beverage_pairing, hero_image_path")
+      .eq("id", menu.approved_option_id)
+      .maybeSingle(),
+    supabase
+      .from("menu_dishes")
+      .select("id, course_no, course_label, dish_name, description, plating_notes, decoration_notes, image_path")
+      .eq("menu_option_id", menu.approved_option_id)
+      .order("course_no", { ascending: true }),
+    supabase
+      .from("cook_plans")
+      .select("id, overview, mise_en_place, plating_overview, service_notes")
+      .eq("menu_id", menu.id)
+      .maybeSingle(),
+    supabase.from("shopping_lists").select("id").eq("menu_id", menu.id).maybeSingle(),
+  ]);
+
+  const { data: shoppingItems } = shoppingList
+    ? await supabase.from("shopping_items").select("id").eq("shopping_list_id", shoppingList.id)
+    : { data: [] as { id: string }[] };
+
+  const { data: cookSteps } = cookPlan
+    ? await supabase
+      .from("cook_steps")
+      .select("id, step_no, phase, title, details, dish_name")
+      .eq("cook_plan_id", cookPlan.id)
+      .order("step_no", { ascending: true })
+    : { data: [] as { id: string; step_no: number; phase: string; title: string; details: string; dish_name: string | null }[] };
+
+  return (
+    <PageTransition>
+      <PageHero
+        eyebrow="Approved Service"
+        title={menu.title ?? "Approved menu"}
+        description={`${menu.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}${menu.meal_type ? ` · ${menu.meal_type}` : ""}`}
+      />
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Card className="space-y-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Menu metadata</p>
+          <p><strong>Status:</strong> <span className="capitalize">{menu.status}</span></p>
+          <p><strong>Invitees:</strong> {menu.invitee_count ?? "-"}</p>
+          <p><strong>Restrictions:</strong> {menu.restrictions?.length ? menu.restrictions.join(", ") : "None"}</p>
+          <p><strong>Chef notes:</strong> {menu.notes ?? "No chef notes"}</p>
+        </Card>
+        <Card className="space-y-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Selected option</p>
+          <p className="font-serif text-2xl">{approvedOption?.title ?? approvedOption?.michelin_name ?? "Approved option"}</p>
+          <p className="text-sm text-muted-foreground">{approvedOption?.concept_summary ?? approvedOption?.concept ?? "No concept summary."}</p>
+          <p className="text-sm"><strong>Beverage pairing:</strong> {approvedOption?.beverage_pairing ?? "Not specified"}</p>
+          <p className="text-sm"><strong>Option chef notes:</strong> {approvedOption?.chef_notes ?? "No option notes"}</p>
+          {approvedOption?.hero_image_path ? <img src={approvedOption.hero_image_path} alt="Menu hero" className="mt-2 h-40 w-full rounded-xl object-cover" /> : null}
+        </Card>
+      </div>
+
+      <Card className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-serif text-2xl">Dishes</h2>
+          <ShoppingListButton menuId={menu.id} />
+        </div>
+        {(dishes ?? []).length ? (
+          <div className="space-y-3">
+            {(dishes ?? []).map((dish) => (
+              <div key={dish.id} className="rounded-2xl border border-border/70 bg-card/70 p-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{dish.course_label ?? `Course ${dish.course_no}`}</p>
+                <p className="font-medium">{dish.dish_name}</p>
+                <p className="text-sm text-muted-foreground">{dish.description}</p>
+                <p className="mt-2 text-xs"><strong>Plating:</strong> {dish.plating_notes ?? "No plating notes"}</p>
+                <p className="text-xs"><strong>Decoration:</strong> {dish.decoration_notes ?? "No decoration notes"}</p>
+                {dish.image_path ? <img src={dish.image_path} alt={dish.dish_name} className="mt-2 h-36 w-full rounded-xl object-cover md:h-40 md:w-64" /> : null}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No dishes available for the approved option.</p>
+        )}
+      </Card>
+
+      <Card className="space-y-2">
+        <h2 className="font-serif text-2xl">Cooking guidance</h2>
+        <p className="text-sm text-muted-foreground">{cookPlan?.overview ?? "No cook overview yet."}</p>
+        <p className="text-sm"><strong>Mise en place:</strong> {cookPlan?.mise_en_place ?? "Not generated"}</p>
+        <p className="text-sm"><strong>Plating overview:</strong> {cookPlan?.plating_overview ?? "Not generated"}</p>
+        <p className="text-sm"><strong>Service notes:</strong> {cookPlan?.service_notes ?? "Not generated"}</p>
+        {(cookSteps ?? []).length ? (
+          <div className="space-y-2">
+            {(cookSteps ?? []).map((step) => (
+              <div key={step.id} className="rounded-xl border border-border/60 p-2 text-sm">
+                <p><strong>#{step.step_no}</strong> · {step.phase}</p>
+                <p className="font-medium">{step.title}</p>
+                <p className="text-muted-foreground">{step.details}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </Card>
+
+      <Card>
+        <p className="text-sm text-muted-foreground">Shopping list status: {shoppingList ? `${shoppingItems?.length ?? 0} items prepared` : "Not generated yet"}.</p>
+      </Card>
+    </PageTransition>
+  );
+}
