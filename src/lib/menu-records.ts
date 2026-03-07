@@ -1,5 +1,6 @@
 import { MenuOption } from "@/types/domain";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { resolveStorageImagesForMenuOption } from "@/lib/menu-images";
 
 type MenuRow = {
   id: string;
@@ -20,6 +21,7 @@ type MenuRow = {
     hero_image_path: string | null;
     hero_image_prompt: string | null;
     menu_dishes: Array<{
+      id?: string;
       course_no: number;
       course_label: string | null;
       dish_name: string;
@@ -55,6 +57,13 @@ export function normalizeMenuOptions(options: MenuRow["menu_options"] = []): Men
     }));
 }
 
+export async function normalizeMenuOptionsWithResolvedImages(options: MenuRow["menu_options"] = []): Promise<MenuOption[]> {
+  const normalized = normalizeMenuOptions(options);
+  const supabase = createSupabaseAdminClient();
+
+  return Promise.all(normalized.map((option) => resolveStorageImagesForMenuOption(supabase, option)));
+}
+
 export async function fetchMenuWithOptions(menuId: string) {
   const supabase = createSupabaseAdminClient();
   const result = await supabase
@@ -78,6 +87,7 @@ export async function fetchMenuWithOptions(menuId: string) {
         hero_image_path,
         hero_image_prompt,
         menu_dishes (
+          id,
           course_no,
           course_label,
           dish_name,

@@ -57,6 +57,25 @@ function resolveGenerateErrorMessage(payload: GenerateMenuApiResponse, status: n
   return "Unable to generate menu. Please try again.";
 }
 
+
+function hasPendingImages(options: MenuOption[]) {
+  return options.some((option) => !option.heroImagePath || option.dishes.some((dish) => !dish.imagePath));
+}
+
+async function refreshMenuImagesUntilSettled(menuId: string, currentOptions: MenuOption[], prioritizedOptionId?: string) {
+  let latest = currentOptions;
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    if (!hasPendingImages(latest)) break;
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    const refreshed = await requestMenuImages(menuId, prioritizedOptionId);
+    if (!refreshed?.length) continue;
+    latest = refreshed;
+  }
+
+  return latest;
+}
+
 function normalizeInviteePreference(invitee: InviteePreferenceInput | undefined, index: number): InviteePreferenceInput {
   return {
     label: invitee?.label?.trim() || `Individual ${index + 1}`,
@@ -146,9 +165,14 @@ export function GenerateMenuForm() {
 
       if (createdMenuId) {
         void requestMenuImages(createdMenuId).then((nextOptions) => {
-          if (nextOptions?.length) {
-            setMenus(nextOptions);
-          }
+          if (!nextOptions?.length) return;
+
+          setMenus(nextOptions);
+          void refreshMenuImagesUntilSettled(createdMenuId, nextOptions).then((settledOptions) => {
+            if (settledOptions?.length) {
+              setMenus(settledOptions);
+            }
+          });
         });
       }
     } catch (error) {
@@ -183,9 +207,14 @@ export function GenerateMenuForm() {
       if (res.ok) {
         setSelectedOptionId(optionId);
         void requestMenuImages(menuId, optionId).then((nextOptions) => {
-          if (nextOptions?.length) {
-            setMenus(nextOptions);
-          }
+          if (!nextOptions?.length) return;
+
+          setMenus(nextOptions);
+          void refreshMenuImagesUntilSettled(menuId, nextOptions, optionId).then((settledOptions) => {
+            if (settledOptions?.length) {
+              setMenus(settledOptions);
+            }
+          });
         });
       }
     } finally {

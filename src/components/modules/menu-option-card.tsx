@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { resolveMenuImageUrl } from "@/lib/menu-images";
 import { useMemo, useState } from "react";
 
 type MenuOptionCardProps = {
@@ -18,8 +17,14 @@ type MenuOptionCardProps = {
   selecting?: boolean;
 };
 
-function DishImage({ imagePath }: { imagePath?: string | null }) {
-  const resolvedImage = useMemo(() => resolveMenuImageUrl(imagePath), [imagePath]);
+function resolveClientImageUrl(url?: string | null, path?: string | null) {
+  if (url && /^https?:\/\//i.test(url)) return url;
+  if (path && /^https?:\/\//i.test(path)) return path;
+  return null;
+}
+
+function DishImage({ imagePath, imageUrl }: { imagePath?: string | null; imageUrl?: string | null }) {
+  const resolvedImage = useMemo(() => resolveClientImageUrl(imageUrl, imagePath), [imagePath, imageUrl]);
   const [hasError, setHasError] = useState(false);
 
   if (resolvedImage && !hasError) {
@@ -43,7 +48,7 @@ function DishImage({ imagePath }: { imagePath?: string | null }) {
 }
 
 export function MenuOptionCard({ option, onSelect, isSelected = false, selecting = false }: MenuOptionCardProps) {
-  const heroImageSrc = useMemo(() => resolveMenuImageUrl(option.heroImagePath), [option.heroImagePath]);
+  const heroImageSrc = useMemo(() => resolveClientImageUrl(option.heroImageUrl, option.heroImagePath), [option.heroImagePath, option.heroImageUrl]);
   const [heroHasError, setHeroHasError] = useState(false);
 
   return (
@@ -87,7 +92,7 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
               </Accordion.Header>
               <Accordion.Content className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden px-4 pb-4">
                 <div className="space-y-3 border-t border-border/60 pt-3 text-sm">
-                  <DishImage imagePath={dish.imagePath} />
+                  <DishImage imagePath={dish.imagePath} imageUrl={dish.imageUrl} />
                   <p className="text-muted-foreground">{dish.description}</p>
                   <p className="flex items-start gap-2"><UtensilsCrossed size={14} className="mt-0.5 text-muted-foreground" />Plating: {dish.platingNotes}</p>
                   {dish.beverageSuggestion ? (

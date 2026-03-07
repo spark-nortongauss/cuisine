@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
-import { fetchMenuWithOptions, normalizeMenuOptions } from "@/lib/menu-records";
+import { fetchMenuWithOptions, normalizeMenuOptionsWithResolvedImages } from "@/lib/menu-records";
 import { enrichMenuImages } from "@/lib/ai/menu-images";
 
 type GenerateMenuImagesResponse = {
   success: boolean;
   menuId?: string;
-  options?: ReturnType<typeof normalizeMenuOptions>;
+  options?: Awaited<ReturnType<typeof normalizeMenuOptionsWithResolvedImages>>;
   error?: string;
   code?: string;
 };
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     return NextResponse.json<GenerateMenuImagesResponse>({
       success: true,
       menuId,
-      options: normalizeMenuOptions(refreshedMenu.menu_options ?? []),
+      options: await normalizeMenuOptionsWithResolvedImages(refreshedMenu.menu_options ?? []),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
