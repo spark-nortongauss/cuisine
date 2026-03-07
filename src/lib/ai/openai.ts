@@ -5,7 +5,7 @@ import { cookPlanAiSchema, formatMenuOptionForAi, shoppingItemAiSchema } from "@
 
 let openAiClient: OpenAI | null = null;
 
-function getOpenAiClient() {
+export function getOpenAiClient() {
   if (!openAiClient) {
     openAiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   }

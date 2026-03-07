@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { resolveMenuImageUrl } from "@/lib/menu-images";
+import { useMemo, useState } from "react";
 
 type MenuOptionCardProps = {
   option: MenuOption;
@@ -17,8 +19,19 @@ type MenuOptionCardProps = {
 };
 
 function DishImage({ imagePath }: { imagePath?: string | null }) {
-  if (imagePath) {
-    return <img src={imagePath} alt="Dish visual" className="h-32 w-full rounded-xl object-cover md:h-28 md:w-44" loading="lazy" />;
+  const resolvedImage = useMemo(() => resolveMenuImageUrl(imagePath), [imagePath]);
+  const [hasError, setHasError] = useState(false);
+
+  if (resolvedImage && !hasError) {
+    return (
+      <img
+        src={resolvedImage}
+        alt="Dish visual"
+        className="h-32 w-full rounded-xl object-cover md:h-28 md:w-44"
+        loading="lazy"
+        onError={() => setHasError(true)}
+      />
+    );
   }
 
   return (
@@ -30,11 +43,20 @@ function DishImage({ imagePath }: { imagePath?: string | null }) {
 }
 
 export function MenuOptionCard({ option, onSelect, isSelected = false, selecting = false }: MenuOptionCardProps) {
+  const heroImageSrc = useMemo(() => resolveMenuImageUrl(option.heroImagePath), [option.heroImagePath]);
+  const [heroHasError, setHeroHasError] = useState(false);
+
   return (
     <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
       <Card variant="feature" className={cn("space-y-5 overflow-hidden border transition", isSelected ? "border-success/50 shadow-glow" : "") }>
-        {option.heroImagePath ? (
-          <img src={option.heroImagePath} alt={`${option.title} hero`} className="h-44 w-full rounded-2xl object-cover md:h-52" loading="lazy" />
+        {heroImageSrc && !heroHasError ? (
+          <img
+            src={heroImageSrc}
+            alt={`${option.title} hero`}
+            className="h-44 w-full rounded-2xl object-cover md:h-52"
+            loading="lazy"
+            onError={() => setHeroHasError(true)}
+          />
         ) : (
           <div className="flex h-44 w-full items-center justify-center rounded-2xl border border-border/60 bg-gradient-to-r from-primary/10 via-card/90 to-accent/20 text-sm text-muted-foreground md:h-52">
             Premium hero image pending
