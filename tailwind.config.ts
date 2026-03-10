@@ -29,8 +29,8 @@ const config: Config = {
         "3xl": "1.8rem",
       },
       boxShadow: {
-        luxe: "0 14px 40px -24px rgba(57, 40, 21, 0.55)",
-        glow: "0 0 0 1px rgba(188, 148, 90, 0.35), 0 20px 44px -24px rgba(178, 138, 79, 0.75)",
+        luxe: "0 14px 40px -24px rgba(22, 38, 72, 0.55)",
+        glow: "0 0 0 1px rgba(72, 155, 255, 0.4), 0 20px 44px -24px rgba(49, 183, 174, 0.7)",
       },
     },
   },
