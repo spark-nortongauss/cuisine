@@ -24,7 +24,7 @@ export function AmbientOrbs() {
   return (
     <>
       <div ref={orbA} className="pointer-events-none fixed -left-16 top-10 h-72 w-72 rounded-full bg-primary/15 blur-3xl" aria-hidden />
-      <div ref={orbB} className="pointer-events-none fixed -right-20 top-32 h-96 w-96 rounded-full bg-accent/15 blur-3xl" aria-hidden />
+      <div ref={orbB} className="pointer-events-none fixed -right-20 top-32 h-96 w-96 rounded-full bg-wine/15 blur-3xl" aria-hidden />
     </>
   );
 }

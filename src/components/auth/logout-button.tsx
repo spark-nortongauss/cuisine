@@ -11,7 +11,7 @@ export function LogoutButton() {
       type="button"
       variant="outline"
       size="sm"
-      className="gap-2 border-primary/20 bg-card/70"
+      className="gap-2 border-primary/30 bg-card/95"
       onClick={() => {
         window.location.href = "/auth/logout";
       }}

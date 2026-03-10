@@ -3,22 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --background: 24 24% 8%;
-  --foreground: 39 32% 93%;
-  --card: 26 24% 12%;
-  --card-foreground: 36 34% 93%;
-  --primary: 41 86% 69%;
-  --primary-foreground: 23 26% 13%;
-  --muted: 26 16% 20%;
-  --muted-foreground: 33 18% 73%;
-  --accent: 153 30% 43%;
-  --accent-foreground: 35 34% 94%;
-  --border: 29 18% 30%;
-  --destructive: 10 72% 58%;
-  --destructive-foreground: 34 33% 97%;
-  --success: 149 37% 48%;
-  --success-foreground: 35 38% 96%;
-  --warning: 35 86% 62%;
+  --background: 0 0% 7%;
+  --foreground: 38 36% 96%;
+  --card: 38 36% 96%;
+  --card-foreground: 0 0% 10%;
+  --primary: 41 61% 57%;
+  --primary-foreground: 0 0% 10%;
+  --muted: 40 31% 94%;
+  --muted-foreground: 30 13% 34%;
+  --accent: 41 66% 65%;
+  --accent-foreground: 0 0% 10%;
+  --border: 37 28% 87%;
+  --destructive: 0 51% 46%;
+  --destructive-foreground: 38 36% 96%;
+  --success: 100 28% 33%;
+  --success-foreground: 38 36% 96%;
+  --warning: 40 64% 47%;
+  --info: 206 38% 40%;
+  --wine: 351 55% 27%;
 }
 
 * {
@@ -26,10 +28,10 @@
 }
 
 body {
-  @apply bg-background text-foreground antialiased;
-  background-image: radial-gradient(circle at 14% -8%, hsl(42 85% 67% / 0.18), transparent 35%),
-    radial-gradient(circle at 85% -5%, hsl(152 36% 42% / 0.14), transparent 33%),
-    linear-gradient(175deg, hsl(30 28% 14%), hsl(21 25% 8%) 48%, hsl(16 22% 7%));
+  @apply bg-background text-foreground font-sans antialiased;
+  background-image: radial-gradient(circle at 12% -10%, hsl(var(--primary) / 0.16), transparent 34%),
+    radial-gradient(circle at 88% -12%, hsl(var(--wine) / 0.16), transparent 36%),
+    linear-gradient(135deg, #1a1a1a 0%, #2c2620 100%);
   min-height: 100vh;
 }
 
@@ -38,11 +40,11 @@ body {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(rgba(248, 215, 161, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(127, 185, 152, 0.03) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(232, 225, 214, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 225, 214, 0.04) 1px, transparent 1px);
   background-size: 120px 120px;
-  opacity: 0.28;
-  mask-image: radial-gradient(circle at 50% 32%, black, transparent 85%);
+  opacity: 0.26;
+  mask-image: radial-gradient(circle at 50% 30%, black, transparent 84%);
 }
 
 .grain-overlay {
@@ -54,8 +56,8 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.07;
-  background-image: radial-gradient(circle, rgba(255, 239, 219, 0.32) 0.7px, transparent 0.8px);
+  opacity: 0.06;
+  background-image: radial-gradient(circle, rgba(255, 250, 240, 0.3) 0.7px, transparent 0.8px);
   background-size: 3px 3px;
 }
 

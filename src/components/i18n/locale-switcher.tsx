@@ -20,7 +20,7 @@ export function LocaleSwitcher() {
   const { locale, t } = useI18n();
 
   return (
-    <label className="inline-flex items-center gap-2 rounded-2xl border border-primary/20 bg-card/75 px-3 py-2 text-xs text-muted-foreground shadow-soft">
+    <label className="inline-flex items-center gap-2 rounded-2xl border border-primary/30 bg-card/95 px-3 py-2 text-xs text-muted-foreground shadow-soft">
       <Languages size={14} className="text-primary" />
       <span className="sr-only">{t("app.locale", "Language")}</span>
       <select
