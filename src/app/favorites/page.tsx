@@ -46,7 +46,7 @@ export default async function FavoritesPage() {
                       <h2 className="font-serif text-3xl">{resolveMenuDisplayTitle(menu, approvedOption)}</h2>
                       <p className="text-sm text-muted-foreground">{favorite.people_count ?? "-"} people · {favorite.served_on ?? "unspecified date"}</p>
                     </div>
-                    <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-muted/30 to-card p-4">
+                    <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-card p-4">
                       <p className="mb-2 flex items-center gap-2 text-sm"><Heart size={15} className="text-primary" />Guest sentiment</p>
                       <Badge variant="accent" className="mb-2"><Star size={12} />{favorite.rating_percent}% rating</Badge>
                     </div>

@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { CircleCheck, ShoppingBasket } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { PageTransition } from "@/components/layout/page-transition";
+import { Badge } from "@/components/ui/badge";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import type { Database } from "@/lib/supabase/database.types";
@@ -56,8 +58,8 @@ export default async function ShoppingIndexPage() {
     <PageTransition>
       <PageHero
         eyebrow="Operations"
-        title="Shopping lists"
-        description="All menu shopping lists in one operational dashboard."
+        title="Shopping intelligence"
+        description="Track procurement progress with premium operational clarity and move directly into cooking execution."
       />
 
       {lists.length ? (
@@ -74,18 +76,26 @@ export default async function ShoppingIndexPage() {
               </tr>
             </thead>
             <tbody>
-              {lists.map((list) => (
-                <tr key={list.id} className="rounded-2xl border border-border/60 bg-card/70">
-                  <td className="px-3 py-3 font-medium text-primary underline-offset-4 hover:underline">
-                    <Link href={`/shopping/${list.menuId}`}>{list.menuTitle}</Link>
-                  </td>
-                  <td className="px-3 py-3">{list.mealType}</td>
-                  <td className="px-3 py-3">{list.serveAt ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(list.serveAt)) : "No date"}</td>
-                  <td className="px-3 py-3">{list.itemCount}</td>
-                  <td className="px-3 py-3">{list.purchasedCount}/{list.itemCount}</td>
-                  <td className="px-3 py-3">{new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(list.updatedAt))}</td>
-                </tr>
-              ))}
+              {lists.map((list) => {
+                const complete = list.itemCount > 0 && list.purchasedCount === list.itemCount;
+                return (
+                  <tr key={list.id} className="rounded-2xl border border-border/60 bg-card/65 transition hover:border-primary/40">
+                    <td className="px-3 py-3 font-medium text-primary underline-offset-4 hover:underline">
+                      <Link href={`/shopping/${list.menuId}`}>{list.menuTitle}</Link>
+                    </td>
+                    <td className="px-3 py-3">{list.mealType}</td>
+                    <td className="px-3 py-3">{list.serveAt ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(list.serveAt)) : "No date"}</td>
+                    <td className="px-3 py-3">{list.itemCount}</td>
+                    <td className="px-3 py-3">
+                      <Badge variant={complete ? "success" : "accent"} className="gap-1.5">
+                        {complete ? <CircleCheck size={12} /> : <ShoppingBasket size={12} />}
+                        {list.purchasedCount}/{list.itemCount}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-3">{new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(list.updatedAt))}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </Card>

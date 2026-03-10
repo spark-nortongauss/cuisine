@@ -29,8 +29,12 @@ const config: Config = {
         "3xl": "1.8rem",
       },
       boxShadow: {
-        luxe: "0 14px 40px -24px rgba(22, 38, 72, 0.55)",
-        glow: "0 0 0 1px rgba(72, 155, 255, 0.4), 0 20px 44px -24px rgba(49, 183, 174, 0.7)",
+        luxe: "0 28px 60px -34px rgba(24, 16, 9, 0.72)",
+        glow: "0 0 0 1px rgba(234, 194, 116, 0.38), 0 26px 58px -32px rgba(24, 120, 96, 0.58)",
+        soft: "0 18px 36px -30px rgba(18, 10, 8, 0.95)",
+      },
+      backgroundImage: {
+        "premium-surface": "linear-gradient(155deg, hsl(24 22% 18% / 0.84), hsl(18 20% 11% / 0.86) 45%, hsl(30 18% 13% / 0.9))",
       },
     },
   },
