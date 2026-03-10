@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, Circle, Loader2, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/i18n/i18n-provider";
@@ -81,11 +82,15 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
 
   return (
     <Card className="space-y-4">
-      <div className="sticky top-3 z-10 rounded-2xl border border-border/70 bg-card/90 p-3 backdrop-blur">
+      <div className="sticky top-3 z-10 rounded-2xl border border-primary/20 bg-card/90 p-3 backdrop-blur">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("common.table.progress", "Progress")}</p>
         <p className="font-serif text-2xl">{checkedCount} / {items.length} {t("shopping.purchased", "purchased")}</p>
         <div className="mt-2 h-2 rounded-full bg-muted">
-          <div className="h-2 rounded-full bg-success" style={{ width: `${items.length ? (checkedCount / items.length) * 100 : 0}%` }} />
+          <motion.div
+            className="h-2 rounded-full bg-success"
+            animate={{ width: `${items.length ? (checkedCount / items.length) * 100 : 0}%` }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          />
         </div>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
@@ -102,7 +107,7 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
       </div>
 
       {items.map((item) => (
-        <label key={item.id} className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/80 p-3 text-sm transition hover:border-primary/30">
+        <label key={item.id} className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/70 p-3 text-sm transition hover:border-primary/40">
           <div className="space-y-1">
             <p className="font-medium">{item.item_name}</p>
             <p className="text-xs text-muted-foreground">{item.section ?? t("shopping.general", "General")} · {item.quantity ?? "-"} {item.unit ?? ""}</p>

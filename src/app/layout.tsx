@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
 import { I18nProvider } from "@/components/i18n/i18n-provider";
@@ -10,7 +10,7 @@ const display = Cormorant_Garamond({
   weight: ["400", "500", "600", "700"],
   variable: "--font-display",
 });
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const sans = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Gastronomic Cuisine",

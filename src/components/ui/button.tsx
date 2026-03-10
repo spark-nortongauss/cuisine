@@ -4,15 +4,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-2xl text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 rounded-2xl text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
         default:
-          "bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground shadow-luxe hover:-translate-y-0.5 hover:shadow-glow",
-        outline: "border border-border/80 bg-card/80 text-foreground backdrop-blur hover:border-primary/40 hover:bg-card",
-        ghost: "text-foreground hover:bg-muted/70",
-        subtle: "bg-muted text-muted-foreground hover:text-foreground",
+          "bg-gradient-to-br from-primary via-primary to-primary/85 text-primary-foreground shadow-soft hover:-translate-y-0.5 hover:shadow-glow",
+        outline: "border border-border/80 bg-card/65 text-foreground backdrop-blur hover:border-primary/40 hover:bg-card/90",
+        ghost: "text-foreground hover:bg-muted/60",
+        subtle: "bg-muted/75 text-muted-foreground hover:text-foreground",
       },
       size: {
         default: "h-11 px-5 py-2",

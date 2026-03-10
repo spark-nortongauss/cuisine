@@ -3,22 +3,22 @@
 @tailwind utilities;
 
 :root {
-  --background: 224 30% 10%;
-  --foreground: 210 32% 95%;
-  --card: 223 26% 15%;
-  --card-foreground: 210 35% 95%;
-  --primary: 214 90% 60%;
-  --primary-foreground: 221 45% 12%;
-  --muted: 224 18% 22%;
-  --muted-foreground: 214 20% 74%;
-  --accent: 181 62% 47%;
-  --accent-foreground: 221 42% 12%;
-  --border: 220 24% 32%;
-  --destructive: 2 65% 52%;
-  --destructive-foreground: 210 35% 95%;
-  --success: 158 62% 42%;
-  --success-foreground: 210 35% 96%;
-  --warning: 39 90% 57%;
+  --background: 24 24% 8%;
+  --foreground: 39 32% 93%;
+  --card: 26 24% 12%;
+  --card-foreground: 36 34% 93%;
+  --primary: 41 86% 69%;
+  --primary-foreground: 23 26% 13%;
+  --muted: 26 16% 20%;
+  --muted-foreground: 33 18% 73%;
+  --accent: 153 30% 43%;
+  --accent-foreground: 35 34% 94%;
+  --border: 29 18% 30%;
+  --destructive: 10 72% 58%;
+  --destructive-foreground: 34 33% 97%;
+  --success: 149 37% 48%;
+  --success-foreground: 35 38% 96%;
+  --warning: 35 86% 62%;
 }
 
 * {
@@ -27,9 +27,9 @@
 
 body {
   @apply bg-background text-foreground antialiased;
-  background-image: radial-gradient(circle at 15% -12%, hsl(212 95% 66% / 0.22), transparent 44%),
-    radial-gradient(circle at 88% -8%, hsl(181 65% 48% / 0.16), transparent 34%),
-    linear-gradient(180deg, hsl(224 34% 13%), hsl(226 28% 9%));
+  background-image: radial-gradient(circle at 14% -8%, hsl(42 85% 67% / 0.18), transparent 35%),
+    radial-gradient(circle at 85% -5%, hsl(152 36% 42% / 0.14), transparent 33%),
+    linear-gradient(175deg, hsl(30 28% 14%), hsl(21 25% 8%) 48%, hsl(16 22% 7%));
   min-height: 100vh;
 }
 
@@ -38,11 +38,11 @@ body {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(rgba(134, 168, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(94, 225, 215, 0.04) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(248, 215, 161, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(127, 185, 152, 0.03) 1px, transparent 1px);
   background-size: 120px 120px;
-  opacity: 0.16;
-  mask-image: radial-gradient(circle at 50% 35%, black, transparent 85%);
+  opacity: 0.28;
+  mask-image: radial-gradient(circle at 50% 32%, black, transparent 85%);
 }
 
 .grain-overlay {
@@ -54,8 +54,8 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.08;
-  background-image: radial-gradient(circle, rgba(148, 221, 255, 0.2) 0.8px, transparent 0.8px);
+  opacity: 0.07;
+  background-image: radial-gradient(circle, rgba(255, 239, 219, 0.32) 0.7px, transparent 0.8px);
   background-size: 3px 3px;
 }
 
@@ -77,14 +77,27 @@ body {
 }
 
 @keyframes accordion-down {
-  from { height: 0; }
-  to { height: var(--radix-accordion-content-height); }
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
 }
 
 @keyframes accordion-up {
-  from { height: var(--radix-accordion-content-height); }
-  to { height: 0; }
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
 }
 
-.animate-accordion-down { animation: accordion-down 220ms ease-out; }
-.animate-accordion-up { animation: accordion-up 220ms ease-out; }
+.animate-accordion-down {
+  animation: accordion-down 220ms ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 220ms ease-out;
+}

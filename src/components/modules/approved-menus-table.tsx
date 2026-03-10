@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Trash2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 type ApprovedMenuRow = {
   id: string;
@@ -20,6 +22,12 @@ type ApprovedMenuRow = {
 type Props = {
   rows: ApprovedMenuRow[];
 };
+
+function statusVariant(status: string): "default" | "accent" | "success" | "warning" {
+  if (["approved", "selected"].includes(status)) return "accent";
+  if (status === "validated") return "success";
+  return "default";
+}
 
 export function ApprovedMenusTable({ rows }: Props) {
   const router = useRouter();
@@ -87,10 +95,13 @@ export function ApprovedMenusTable({ rows }: Props) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr
+            {rows.map((row, index) => (
+              <motion.tr
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: index * 0.03 }}
                 key={row.id}
-                className="cursor-pointer rounded-2xl border border-border/60 bg-card/70 transition hover:border-primary/30"
+                className="cursor-pointer rounded-2xl border border-border/60 bg-card/65 transition hover:border-primary/40 hover:bg-card/85"
                 onClick={() => router.push(`/approval/menus/${row.id}`)}
               >
                 <td className="px-3 py-3" onClick={(event) => event.stopPropagation()}>
@@ -108,9 +119,9 @@ export function ApprovedMenusTable({ rows }: Props) {
                 <td className="px-3 py-3">{row.mealType}</td>
                 <td className="px-3 py-3">{row.serveAt ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(row.serveAt)) : "No date"}</td>
                 <td className="px-3 py-3">{row.inviteeCount ?? "-"}</td>
-                <td className="px-3 py-3 capitalize">{row.status}</td>
+                <td className="px-3 py-3 capitalize"><Badge variant={statusVariant(row.status)}>{row.status}</Badge></td>
                 <td className="px-3 py-3">{new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(row.updatedAt))}</td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>

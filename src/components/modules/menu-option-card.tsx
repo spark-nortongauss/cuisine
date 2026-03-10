@@ -52,8 +52,8 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
   const [heroHasError, setHeroHasError] = useState(false);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-      <Card variant="feature" className={cn("space-y-5 overflow-hidden border transition", isSelected ? "border-success/50 shadow-glow" : "") }>
+    <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} whileHover={{ y: -4 }}>
+      <Card variant="feature" className={cn("space-y-5 overflow-hidden border transition", isSelected ? "border-success/60 shadow-glow" : "") }>
         {heroImageSrc && !heroHasError ? (
           <img
             src={heroImageSrc}
@@ -70,7 +70,7 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Curated option</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-primary/80">Curated option</p>
             <h3 className="font-serif text-3xl md:text-4xl">{option.title}</h3>
           </div>
           <Badge variant={isSelected ? "success" : "accent"}>{isSelected ? "Selected" : "Michelin-inspired"}</Badge>
@@ -80,7 +80,7 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
 
         <Accordion.Root type="single" collapsible defaultValue="course-0" className="space-y-3">
           {option.dishes.map((dish, index) => (
-            <Accordion.Item key={`${dish.course}-${dish.name}`} value={`course-${index}`} className="overflow-hidden rounded-2xl border border-border/70 bg-card/75">
+            <Accordion.Item key={`${dish.course}-${dish.name}`} value={`course-${index}`} className="overflow-hidden rounded-2xl border border-border/70 bg-card/70">
               <Accordion.Header>
                 <Accordion.Trigger className="group flex w-full items-center justify-between gap-2 px-4 py-3 text-left">
                   <div>
@@ -106,7 +106,7 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
         </Accordion.Root>
 
         <div className="flex flex-wrap gap-2">
-          <Button size="sm">
+          <Button size="sm" variant="outline">
             <Sparkles size={14} />
             Regenerate
           </Button>
