@@ -41,7 +41,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
             <div>
               <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">{t("app.brandTop", "Gastronomic")}</p>
-              <p className="font-serif text-xl leading-none tracking-[0.03em]">{t("app.brandBottom", "Cuisine")}</p>
+              <p className="font-serif text-xl leading-none tracking-[0.045em]">{t("app.brandBottom", "Cuisine")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ) : null}
       <main className="mx-auto max-w-7xl p-4 md:p-8">{children}</main>
       {!publicLayout ? (
-        <nav className="fixed inset-x-2 bottom-2 z-50 border border-primary/30 bg-card/95 p-1.5 shadow-luxe backdrop-blur-xl md:left-1/2 md:max-w-3xl md:-translate-x-1/2 md:rounded-3xl">
+        <nav className="fixed inset-x-2 bottom-2 z-50 rounded-3xl border border-primary/30 bg-card/95 p-1.5 shadow-luxe backdrop-blur-xl md:left-1/2 md:max-w-3xl md:-translate-x-1/2">
           <ul className="grid grid-cols-6 gap-1">
             {navItems.map(({ href, label, icon: Icon }) => {
               const active = pathname?.startsWith(href);

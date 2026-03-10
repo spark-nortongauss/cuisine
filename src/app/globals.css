@@ -3,24 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 7%;
-  --foreground: 38 36% 96%;
-  --card: 38 36% 96%;
-  --card-foreground: 0 0% 10%;
-  --primary: 41 61% 57%;
-  --primary-foreground: 0 0% 10%;
-  --muted: 40 31% 94%;
-  --muted-foreground: 30 13% 34%;
-  --accent: 41 66% 65%;
-  --accent-foreground: 0 0% 10%;
-  --border: 37 28% 87%;
-  --destructive: 0 51% 46%;
-  --destructive-foreground: 38 36% 96%;
-  --success: 100 28% 33%;
-  --success-foreground: 38 36% 96%;
-  --warning: 40 64% 47%;
-  --info: 206 38% 40%;
-  --wine: 351 55% 27%;
+  --background: 0 0% 7%; /* #121212 */
+  --foreground: 40 38% 96%; /* #F8F5F0 */
+  --card: 40 38% 96%; /* #F8F5F0 */
+  --card-foreground: 0 0% 7%; /* #121212 */
+  --primary: 40 61% 57%; /* #D4A94F */
+  --primary-foreground: 0 0% 7%;
+  --muted: 37 30% 94%; /* #F5F2EC */
+  --muted-foreground: 29 15% 33%;
+  --accent: 39 66% 65%; /* #E1BC6A */
+  --accent-foreground: 0 0% 7%;
+  --border: 37 31% 88%; /* #E8E1D6 */
+  --destructive: 0 51% 46%; /* #B33A3A */
+  --destructive-foreground: 40 38% 96%;
+  --success: 99 28% 33%; /* #4C6B3C */
+  --success-foreground: 40 38% 96%;
+  --warning: 40 64% 47%; /* #C6922C */
+  --info: 205 38% 40%; /* #3F6B8C */
+  --wine: 349 55% 27%; /* #6B1F2B */
 }
 
 * {
@@ -33,6 +33,32 @@ body {
     radial-gradient(circle at 88% -12%, hsl(var(--wine) / 0.16), transparent 36%),
     linear-gradient(135deg, #1a1a1a 0%, #2c2620 100%);
   min-height: 100vh;
+  letter-spacing: 0.005em;
+}
+
+h1,
+h2,
+h3,
+[data-editorial="true"] {
+  @apply font-serif tracking-[0.01em] text-balance;
+}
+
+@layer components {
+  .premium-panel {
+    @apply rounded-3xl border border-border/80 bg-premium-surface text-card-foreground shadow-soft;
+  }
+
+  .premium-table {
+    @apply w-full min-w-[760px] border-separate border-spacing-y-2 text-sm;
+  }
+
+  .premium-table thead tr {
+    @apply text-left text-[11px] uppercase tracking-[0.2em] text-muted-foreground;
+  }
+
+  .premium-row {
+    @apply rounded-2xl border border-border/70 bg-card/75 transition-colors hover:border-primary/40 hover:bg-card;
+  }
 }
 
 .luxury-shell::before {

@@ -38,9 +38,9 @@ export default async function CookIndexPage() {
       <div className="space-y-3">
         {visibleEntries.length ? (
           <Card className="overflow-x-auto">
-            <table className="w-full min-w-[760px] border-separate border-spacing-y-2 text-sm">
+            <table className="premium-table">
               <thead>
-                <tr className="text-left text-xs uppercase tracking-[0.15em] text-muted-foreground">
+                <tr>
                   <th className="px-3 py-2">{t("common.table.menu")}</th>
                   <th className="px-3 py-2">{t("common.table.meal")}</th>
                   <th className="px-3 py-2">{t("common.table.service")}</th>
@@ -53,8 +53,8 @@ export default async function CookIndexPage() {
                   const menu = Array.isArray(entry.menus) ? entry.menus[0] : entry.menus;
                   const approvedOption = (menu?.menu_options ?? []).find((option: MenuOption) => option.id === menu?.approved_option_id) ?? null;
                   return (
-                    <tr key={entry.id} className="rounded-2xl border border-border/60 bg-card/70">
-                      <td className="px-3 py-3 font-medium text-primary underline-offset-4 hover:underline">
+                    <tr key={entry.id} className="premium-row">
+                      <td className="px-3 py-3 font-serif text-base text-primary underline-offset-4 hover:underline">
                         <Link href={`/cook/${entry.menu_id}`}>{resolveMenuDisplayTitle(menu, approvedOption)}</Link>
                       </td>
                       <td className="px-3 py-3">{menu?.meal_type ?? t("common.mealFallback")}</td>

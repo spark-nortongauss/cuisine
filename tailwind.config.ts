@@ -41,6 +41,8 @@ const config: Config = {
       },
       backgroundImage: {
         "premium-surface": "linear-gradient(135deg, hsl(38 36% 96%), hsl(40 31% 94%))",
+        "premium-surface-soft": "linear-gradient(180deg, hsl(40 38% 96%), hsl(37 30% 94%))",
+        "premium-panel": "linear-gradient(145deg, rgba(248, 245, 240, 0.98), rgba(245, 242, 236, 0.92))",
         "hero-luxury": "linear-gradient(135deg, #1A1A1A 0%, #2C2620 100%)",
         "accent-luxury": "linear-gradient(135deg, #D4A94F 0%, #E5C07B 100%)",
       },

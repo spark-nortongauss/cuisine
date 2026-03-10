@@ -64,9 +64,9 @@ export default async function ShoppingIndexPage() {
 
       {lists.length ? (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[760px] border-separate border-spacing-y-2 text-sm">
+          <table className="premium-table">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-[0.15em] text-muted-foreground">
+              <tr>
                 <th className="px-3 py-2">Menu</th>
                 <th className="px-3 py-2">Meal</th>
                 <th className="px-3 py-2">Service</th>
@@ -79,8 +79,8 @@ export default async function ShoppingIndexPage() {
               {lists.map((list) => {
                 const complete = list.itemCount > 0 && list.purchasedCount === list.itemCount;
                 return (
-                  <tr key={list.id} className="rounded-2xl border border-border/60 bg-card/65 transition hover:border-primary/40">
-                    <td className="px-3 py-3 font-medium text-primary underline-offset-4 hover:underline">
+                  <tr key={list.id} className="premium-row">
+                    <td className="px-3 py-3 font-serif text-base text-primary underline-offset-4 hover:underline">
                       <Link href={`/shopping/${list.menuId}`}>{list.menuTitle}</Link>
                     </td>
                     <td className="px-3 py-3">{list.mealType}</td>
