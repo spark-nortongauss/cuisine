@@ -3,22 +3,22 @@
 @tailwind utilities;
 
 :root {
-  --background: 26 24% 11%;
-  --foreground: 42 36% 92%;
-  --card: 28 22% 16%;
-  --card-foreground: 42 35% 94%;
-  --primary: 42 68% 58%;
-  --primary-foreground: 24 25% 12%;
-  --muted: 26 16% 22%;
-  --muted-foreground: 38 18% 73%;
-  --accent: 45 55% 69%;
-  --accent-foreground: 24 24% 14%;
-  --border: 35 24% 31%;
+  --background: 224 30% 10%;
+  --foreground: 210 32% 95%;
+  --card: 223 26% 15%;
+  --card-foreground: 210 35% 95%;
+  --primary: 214 90% 60%;
+  --primary-foreground: 221 45% 12%;
+  --muted: 224 18% 22%;
+  --muted-foreground: 214 20% 74%;
+  --accent: 181 62% 47%;
+  --accent-foreground: 221 42% 12%;
+  --border: 220 24% 32%;
   --destructive: 2 65% 52%;
-  --destructive-foreground: 42 35% 94%;
-  --success: 152 30% 43%;
-  --success-foreground: 44 38% 95%;
-  --warning: 38 86% 55%;
+  --destructive-foreground: 210 35% 95%;
+  --success: 158 62% 42%;
+  --success-foreground: 210 35% 96%;
+  --warning: 39 90% 57%;
 }
 
 * {
@@ -27,9 +27,9 @@
 
 body {
   @apply bg-background text-foreground antialiased;
-  background-image: radial-gradient(circle at 14% -18%, hsl(43 77% 59% / 0.22), transparent 42%),
-    radial-gradient(circle at 88% -10%, hsl(153 37% 41% / 0.2), transparent 35%),
-    linear-gradient(180deg, hsl(22 28% 14%), hsl(28 24% 10%));
+  background-image: radial-gradient(circle at 15% -12%, hsl(212 95% 66% / 0.22), transparent 44%),
+    radial-gradient(circle at 88% -8%, hsl(181 65% 48% / 0.16), transparent 34%),
+    linear-gradient(180deg, hsl(224 34% 13%), hsl(226 28% 9%));
   min-height: 100vh;
 }
 
@@ -38,8 +38,8 @@ body {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(rgba(220, 184, 120, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(220, 184, 120, 0.04) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(134, 168, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94, 225, 215, 0.04) 1px, transparent 1px);
   background-size: 120px 120px;
   opacity: 0.16;
   mask-image: radial-gradient(circle at 50% 35%, black, transparent 85%);
@@ -55,7 +55,7 @@ body {
   inset: 0;
   pointer-events: none;
   opacity: 0.08;
-  background-image: radial-gradient(circle, rgba(241, 219, 174, 0.22) 0.8px, transparent 0.8px);
+  background-image: radial-gradient(circle, rgba(148, 221, 255, 0.2) 0.8px, transparent 0.8px);
   background-size: 3px 3px;
 }
 

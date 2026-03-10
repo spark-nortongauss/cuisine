@@ -5,6 +5,7 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { ShoppingListButton } from "@/components/modules/shopping-list-button";
 import { resolveMenuDisplayTitle, resolveOptionDisplayTitle } from "@/lib/menu-display";
+import { resolveStorageImageUrl } from "@/lib/menu-images";
 
 export default async function ApprovedMenuDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -57,6 +58,11 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
       .order("step_no", { ascending: true })
     : { data: [] as { id: string; step_no: number; phase: string; title: string; details: string; dish_name: string | null }[] };
 
+  const [heroImageUrl, dishImageUrls] = await Promise.all([
+    resolveStorageImageUrl({ supabase, path: approvedOption?.hero_image_path }),
+    Promise.all((dishes ?? []).map((dish) => resolveStorageImageUrl({ supabase, path: dish.image_path }))),
+  ]);
+
   const displayTitle = resolveMenuDisplayTitle(menu, approvedOption);
 
   return (
@@ -81,7 +87,7 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
           <p className="text-sm text-muted-foreground">{approvedOption?.concept_summary ?? approvedOption?.concept ?? "No concept summary."}</p>
           <p className="text-sm"><strong>Beverage pairing:</strong> {approvedOption?.beverage_pairing ?? "Not specified"}</p>
           <p className="text-sm"><strong>Option chef notes:</strong> {approvedOption?.chef_notes ?? "No option notes"}</p>
-          {approvedOption?.hero_image_path ? <img src={approvedOption.hero_image_path} alt="Menu hero" className="mt-2 h-40 w-full rounded-xl object-cover" /> : null}
+          {heroImageUrl ? <img src={heroImageUrl} alt="Menu hero" className="mt-2 h-40 w-full rounded-xl object-cover" /> : null}
         </Card>
       </div>
 
@@ -92,14 +98,14 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
         </div>
         {(dishes ?? []).length ? (
           <div className="space-y-3">
-            {(dishes ?? []).map((dish) => (
+            {(dishes ?? []).map((dish, index) => (
               <div key={dish.id} className="rounded-2xl border border-border/70 bg-card/70 p-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{dish.course_label ?? `Course ${dish.course_no}`}</p>
                 <p className="font-medium">{dish.dish_name}</p>
                 <p className="text-sm text-muted-foreground">{dish.description}</p>
                 <p className="mt-2 text-xs"><strong>Plating:</strong> {dish.plating_notes ?? "No plating notes"}</p>
                 <p className="text-xs"><strong>Decoration:</strong> {dish.decoration_notes ?? "No decoration notes"}</p>
-                {dish.image_path ? <img src={dish.image_path} alt={dish.dish_name} className="mt-2 h-36 w-full rounded-xl object-cover md:h-40 md:w-64" /> : null}
+                {dishImageUrls[index] ? <img src={dishImageUrls[index] ?? undefined} alt={dish.dish_name} className="mt-2 h-36 w-full rounded-xl object-cover md:h-40 md:w-64" /> : null}
               </div>
             ))}
           </div>
