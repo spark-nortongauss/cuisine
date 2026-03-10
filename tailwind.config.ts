@@ -5,6 +5,10 @@ const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-display)", "Playfair Display", "ui-serif", "Georgia", "serif"],
+      },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
@@ -22,6 +26,8 @@ const config: Config = {
         success: "hsl(var(--success))",
         "success-foreground": "hsl(var(--success-foreground))",
         warning: "hsl(var(--warning))",
+        info: "hsl(var(--info))",
+        wine: "hsl(var(--wine))",
       },
       borderRadius: {
         xl: "1rem",
@@ -29,12 +35,14 @@ const config: Config = {
         "3xl": "1.8rem",
       },
       boxShadow: {
-        luxe: "0 28px 60px -34px rgba(24, 16, 9, 0.72)",
-        glow: "0 0 0 1px rgba(234, 194, 116, 0.38), 0 26px 58px -32px rgba(24, 120, 96, 0.58)",
-        soft: "0 18px 36px -30px rgba(18, 10, 8, 0.95)",
+        luxe: "0 22px 50px -30px rgba(18, 18, 18, 0.7)",
+        glow: "0 0 0 1px rgba(212, 169, 79, 0.34), 0 24px 52px -28px rgba(66, 47, 18, 0.46)",
+        soft: "0 16px 34px -26px rgba(18, 18, 18, 0.58)",
       },
       backgroundImage: {
-        "premium-surface": "linear-gradient(155deg, hsl(24 22% 18% / 0.84), hsl(18 20% 11% / 0.86) 45%, hsl(30 18% 13% / 0.9))",
+        "premium-surface": "linear-gradient(135deg, hsl(38 36% 96%), hsl(40 31% 94%))",
+        "hero-luxury": "linear-gradient(135deg, #1A1A1A 0%, #2C2620 100%)",
+        "accent-luxury": "linear-gradient(135deg, #D4A94F 0%, #E5C07B 100%)",
       },
     },
   },

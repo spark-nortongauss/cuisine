@@ -35,13 +35,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {!publicLayout ? <AmbientOrbs /> : null}
       {!publicLayout ? (
         <header className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 pt-5 md:px-8 md:pt-7">
-          <div className="flex items-center gap-3 rounded-3xl border border-primary/20 bg-premium-surface px-4 py-3 shadow-luxe backdrop-blur-xl">
-            <span className="rounded-2xl bg-primary/90 p-2 text-primary-foreground shadow-soft">
+          <div className="flex items-center gap-3 rounded-3xl border border-primary/30 bg-card/90 px-4 py-3 text-card-foreground shadow-luxe backdrop-blur-xl">
+            <span className="rounded-2xl bg-accent-luxury p-2 text-primary-foreground shadow-soft">
               <ChefHat size={16} />
             </span>
             <div>
               <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">{t("app.brandTop", "Gastronomic")}</p>
-              <p className="font-serif text-xl leading-none">{t("app.brandBottom", "Cuisine")}</p>
+              <p className="font-serif text-xl leading-none tracking-[0.03em]">{t("app.brandBottom", "Cuisine")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ) : null}
       <main className="mx-auto max-w-7xl p-4 md:p-8">{children}</main>
       {!publicLayout ? (
-        <nav className="fixed inset-x-2 bottom-2 z-50 border border-primary/20 bg-card/85 p-1.5 shadow-luxe backdrop-blur-xl md:left-1/2 md:max-w-3xl md:-translate-x-1/2 md:rounded-3xl">
+        <nav className="fixed inset-x-2 bottom-2 z-50 border border-primary/30 bg-card/95 p-1.5 shadow-luxe backdrop-blur-xl md:left-1/2 md:max-w-3xl md:-translate-x-1/2 md:rounded-3xl">
           <ul className="grid grid-cols-6 gap-1">
             {navItems.map(({ href, label, icon: Icon }) => {
               const active = pathname?.startsWith(href);
@@ -62,13 +62,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     href={href}
                     className={cn(
                       "relative z-10 flex flex-col items-center gap-1.5 rounded-2xl px-2 py-2.5 text-[11px] font-semibold transition md:text-xs",
-                      active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                      active ? "text-wine" : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {active ? (
                       <motion.span
                         layoutId="active-route"
-                        className="absolute inset-0 -z-10 rounded-2xl border border-primary/30 bg-primary/10"
+                        className="absolute inset-0 -z-10 rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/30 to-accent/20"
                         transition={{ type: "spring", stiffness: 340, damping: 34 }}
                       />
                     ) : null}
