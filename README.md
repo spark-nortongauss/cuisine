@@ -54,3 +54,6 @@ If you want curated hero dish photos, upload manually to Supabase Storage bucket
 - Chef users must be created manually by the owner in Supabase Auth (Dashboard or admin tooling).
 - Invitees are never created as login users and continue to interact via secure token links only.
 
+
+## Deployment
+- Vercel redeploy trigger: documentation touch-up (no runtime changes).
