@@ -59,7 +59,12 @@ function resolveGenerateErrorMessage(payload: GenerateMenuApiResponse, status: n
 
 
 function hasPendingImages(options: MenuOption[]) {
-  return options.some((option) => !option.heroImagePath || option.dishes.some((dish) => !dish.imagePath));
+  return options.some(
+    (option) =>
+      !option.heroImagePath ||
+      (option.heroImagePath && !option.heroImageUrl) ||
+      option.dishes.some((dish) => !dish.imagePath || (dish.imagePath && !dish.imageUrl)),
+  );
 }
 
 async function refreshMenuImagesUntilSettled(menuId: string, currentOptions: MenuOption[], prioritizedOptionId?: string) {
