@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 const badgeVariants = cva("inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold tracking-[0.08em] uppercase", {
   variants: {
     variant: {
-      default: "border-border bg-muted text-muted-foreground",
-      accent: "border-primary/45 bg-primary/15 text-wine",
+      default: "border-border bg-muted/70 text-card-foreground",
+      accent: "border-accent/70 bg-accent/80 text-accent-foreground",
       success: "border-success/40 bg-success/15 text-success",
       warning: "border-warning/45 bg-warning/20 text-warning",
       danger: "border-destructive/40 bg-destructive/15 text-destructive",
