@@ -5,6 +5,7 @@ import { PageHero } from "@/components/ui/page-hero";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { ApprovedMenusTable } from "@/components/modules/approved-menus-table";
 import { resolveMenuDisplayTitle, resolveOptionDisplayTitle } from "@/lib/menu-display";
+import { getServerLocale, getServerT } from "@/lib/i18n/server";
 
 const APPROVED_STATUSES = new Set(["approved", "validated", "selected"]);
 
@@ -20,6 +21,9 @@ type ApprovedMenuView = {
 };
 
 export default async function ApprovalDashboardPage() {
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
+
   const supabaseServer = await createSupabaseServerClient();
   const {
     data: { user },
@@ -39,11 +43,11 @@ export default async function ApprovalDashboardPage() {
       return {
         id: menu.id,
         title: resolveMenuDisplayTitle(menu, approvedOption),
-        mealType: menu.meal_type ?? "Service",
+        mealType: menu.meal_type ?? t("common.mealFallback", "Service"),
         serveAt: menu.serve_at,
         inviteeCount: menu.invitee_count,
         status: menu.status,
-        approvedOptionTitle: resolveOptionDisplayTitle(approvedOption) ?? "Selected option",
+        approvedOptionTitle: resolveOptionDisplayTitle(approvedOption) ?? t("approval.selectedOption", "Selected option"),
         updatedAt: menu.updated_at,
       };
     });
@@ -51,17 +55,17 @@ export default async function ApprovalDashboardPage() {
   const validatedCount = approvedMenus.filter((menu) => menu.status === "validated").length;
 
   const stats = [
-    { label: "Approved", value: String(approvedMenus.length), icon: Users },
-    { label: "Validated", value: String(validatedCount), icon: CheckCircle2 },
-    { label: "Leader", value: approvedMenus.length ? "Option selected" : "Pending", icon: Trophy },
+    { label: t("approval.stats.approved", "Approved"), value: String(approvedMenus.length), icon: Users },
+    { label: t("approval.stats.validated", "Validated"), value: String(validatedCount), icon: CheckCircle2 },
+    { label: t("approval.stats.leader", "Leader"), value: approvedMenus.length ? t("approval.optionSelected", "Option selected") : t("approval.pending", "Pending"), icon: Trophy },
   ];
 
   return (
     <PageTransition>
       <PageHero
-        eyebrow="Approval Intelligence"
-        title="Approved menus"
-        description="Review approved services, open full menu details, and remove cancelled plans safely."
+        eyebrow={t("approval.eyebrow", "Approval Intelligence")}
+        title={t("approval.title", "Approved menus")}
+        description={t("approval.description", "Review approved services, open full menu details, and remove cancelled plans safely.")}
       />
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -77,7 +81,7 @@ export default async function ApprovalDashboardPage() {
         <ApprovedMenusTable rows={approvedMenus} />
       ) : (
         <Card>
-          <p className="flex items-center gap-2 text-sm text-muted-foreground"><Clock3 size={14} />No approved menus yet. Select an option on Generate to approve it.</p>
+          <p className="flex items-center gap-2 text-sm text-muted-foreground"><Clock3 size={14} />{t("approval.empty", "No approved menus yet. Select an option on Generate to approve it.")}</p>
         </Card>
       )}
     </PageTransition>

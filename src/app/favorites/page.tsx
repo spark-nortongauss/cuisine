@@ -7,10 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import type { Database } from "@/lib/supabase/database.types";
+import { getServerLocale, getServerT } from "@/lib/i18n/server";
 
 type FavoriteMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
 export default async function FavoritesPage() {
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
   const supabaseServer = await createSupabaseServerClient();
   const {
     data: { user },
@@ -26,9 +29,9 @@ export default async function FavoritesPage() {
   return (
     <PageTransition>
       <PageHero
-        eyebrow="Curated Archive"
-        title="Favorites, refined and collectible"
-        description="Revisit top-rated menus and relaunch memorable gastronomic experiences with one click."
+        eyebrow={t("favorites.eyebrow", "Curated Archive")}
+        title={t("favorites.title", "Favorites, refined and collectible")}
+        description={t("favorites.description", "Revisit top-rated menus and relaunch memorable gastronomic experiences with one click.")}
       />
       <div className="space-y-3">
         {(data ?? []).length ? (
@@ -42,13 +45,13 @@ export default async function FavoritesPage() {
                 <Card className="group overflow-hidden transition hover:-translate-y-1 hover:shadow-glow">
                   <div className="grid gap-4 md:grid-cols-[1.2fr_1fr] md:items-center">
                     <div className="space-y-2">
-                      <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{menu?.meal_type ?? "Service"}</p>
+                      <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{menu?.meal_type ?? t("common.mealFallback")}</p>
                       <h2 className="font-serif text-3xl">{resolveMenuDisplayTitle(menu, approvedOption)}</h2>
-                      <p className="text-sm text-muted-foreground">{favorite.people_count ?? "-"} people · {favorite.served_on ?? "unspecified date"}</p>
+                      <p className="text-sm text-muted-foreground">{favorite.people_count ?? "-"} {t("favorites.people", "people")} · {favorite.served_on ?? t("favorites.unspecifiedDate", "unspecified date")}</p>
                     </div>
                     <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-card p-4">
-                      <p className="mb-2 flex items-center gap-2 text-sm"><Heart size={15} className="text-primary" />Guest sentiment</p>
-                      <Badge variant="accent" className="mb-2"><Star size={12} />{favorite.rating_percent}% rating</Badge>
+                      <p className="mb-2 flex items-center gap-2 text-sm"><Heart size={15} className="text-primary" />{t("favorites.guestSentiment", "Guest sentiment")}</p>
+                      <Badge variant="accent" className="mb-2"><Star size={12} />{favorite.rating_percent}% {t("favorites.rating", "rating")}</Badge>
                     </div>
                   </div>
                 </Card>
@@ -57,7 +60,7 @@ export default async function FavoritesPage() {
           })
         ) : (
           <Card>
-            <p className="text-sm text-muted-foreground">No favorites yet. Menus are added after feedback scores are high.</p>
+            <p className="text-sm text-muted-foreground">{t("favorites.empty", "No favorites yet. Menus are added after feedback scores are high.")}</p>
           </Card>
         )}
       </div>

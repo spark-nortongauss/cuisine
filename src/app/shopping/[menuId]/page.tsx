@@ -6,11 +6,14 @@ import { ShoppingListDetail } from "@/components/modules/shopping-list-detail";
 import { Card } from "@/components/ui/card";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import type { Database } from "@/lib/supabase/database.types";
+import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
 
 type ShoppingMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
 export default async function ShoppingDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
 
   const supabaseServer = await createSupabaseServerClient();
   const {
@@ -33,14 +36,14 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
   const menuOptions: ShoppingMenuOptionRow[] = (menu.menu_options ?? []) as ShoppingMenuOptionRow[];
   const approvedOption: ShoppingMenuOptionRow | null = menuOptions.find((option: ShoppingMenuOptionRow) => option.id === menu.approved_option_id) ?? null;
   const title = resolveMenuDisplayTitle(menu, approvedOption);
-  const subtitle = `${menu.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}${menu.meal_type ? ` · ${menu.meal_type}` : ""}`;
+  const subtitle = `${menu.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}${menu.meal_type ? ` · ${menu.meal_type}` : ""}`;
 
   if (!shoppingList) {
     return (
       <PageTransition>
-        <PageHero eyebrow="Operational Workspace" title={title} description={subtitle} />
+        <PageHero eyebrow={t("shopping.detail.eyebrow", "Operational Workspace")} title={title} description={subtitle} />
         <Card>
-          <p className="text-sm text-muted-foreground">Shopping list not generated yet. Open this menu from Approval and click “Shopping List”.</p>
+          <p className="text-sm text-muted-foreground">{t("shopping.detail.notGenerated", "Shopping list not generated yet. Open this menu from Approval and click “Shopping List”.")}</p>
         </Card>
       </PageTransition>
     );
@@ -54,11 +57,11 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
 
   return (
     <PageTransition>
-      <PageHero eyebrow="Operational Workspace" title={title} description={subtitle} />
+      <PageHero eyebrow={t("shopping.detail.eyebrow", "Operational Workspace")} title={title} description={subtitle} />
       <Card>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Menu context</p>
-        <p className="mt-2 text-sm">Invitees: {menu.invitee_count ?? "-"}</p>
-        <p className="text-sm">Restrictions: {menu.restrictions?.length ? menu.restrictions.join(", ") : "None"}</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("shopping.detail.menuContext", "Menu context")}</p>
+        <p className="mt-2 text-sm">{t("approval.invitees", "Invitees")}: {menu.invitee_count ?? "-"}</p>
+        <p className="text-sm">{t("approval.detail.restrictions", "Restrictions")}: {menu.restrictions?.length ? menu.restrictions.join(", ") : t("approval.detail.none", "None")}</p>
       </Card>
       <ShoppingListDetail menuId={menu.id} initialItems={items ?? []} />
     </PageTransition>
