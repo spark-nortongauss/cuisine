@@ -5,20 +5,20 @@ import { PageHero } from "@/components/ui/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { getServerLocale, getServerT } from "@/lib/i18n/server";
 
-const pillars = [
+const getPillars = (t: (key: string, fallback?: string) => string) => [
   {
-    title: "Menu Generation",
-    text: "AI-orchestrated tasting options with refined culinary language and premium service cues.",
+    title: t("dashboard.pillars.generationTitle", "Menu Generation"),
+    text: t("dashboard.pillars.generationText", "AI-orchestrated tasting options with refined culinary language and premium service cues."),
     icon: Sparkles,
   },
   {
-    title: "Approval Intelligence",
-    text: "Tokenized voting with clear leadership signals, invitee sentiment, and decision confidence.",
+    title: t("dashboard.pillars.approvalTitle", "Approval Intelligence"),
+    text: t("dashboard.pillars.approvalText", "Tokenized voting with clear leadership signals, invitee sentiment, and decision confidence."),
     icon: ChartSpline,
   },
   {
-    title: "Operational Mastery",
-    text: "Shopping, prep, and service timelines translated into executive-grade culinary execution.",
+    title: t("dashboard.pillars.operationsTitle", "Operational Mastery"),
+    text: t("dashboard.pillars.operationsText", "Shopping, prep, and service timelines translated into executive-grade culinary execution."),
     icon: ConciergeBell,
   },
 ];
@@ -26,13 +26,14 @@ const pillars = [
 export default async function DashboardPage() {
   const locale = await getServerLocale();
   const t = getServerT(locale);
+  const pillars = getPillars(t);
   return (
     <PageTransition>
       <PageHero
         eyebrow={t("dashboard.eyebrow", "Executive kitchen operations")}
         title={t("dashboard.title", "Design world-class dining moments from one premium workspace")}
         description={t("dashboard.description", "Generate Michelin-level menus, orchestrate invitee consensus, and execute service with confidence across every station.")}
-        chips={["Luxury Hospitality", "AI Culinary Intelligence", "Enterprise Clarity"]}
+        chips={[t("dashboard.chips.hospitality", "Luxury Hospitality"), t("dashboard.chips.ai", "AI Culinary Intelligence"), t("dashboard.chips.clarity", "Enterprise Clarity")]}
       />
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -53,7 +54,7 @@ export default async function DashboardPage() {
       <Card variant="feature" className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("dashboard.today", "Today")}</p>
-          <p className="font-serif text-3xl">6 invitees · 3 curated options · 1 final service</p>
+          <p className="font-serif text-3xl">{t("dashboard.snapshot", "6 invitees · 3 curated options · 1 final service")}</p>
         </div>
         <Badge variant="success">{t("dashboard.workflowHealthy", "Workflow healthy")}</Badge>
       </Card>

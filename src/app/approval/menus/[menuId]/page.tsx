@@ -6,9 +6,12 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/sup
 import { ShoppingListButton } from "@/components/modules/shopping-list-button";
 import { resolveMenuDisplayTitle, resolveOptionDisplayTitle } from "@/lib/menu-display";
 import { resolveStorageImageUrl } from "@/lib/menu-images";
+import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
 
 export default async function ApprovedMenuDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
 
   const supabaseServer = await createSupabaseServerClient();
   const {
@@ -68,58 +71,58 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
   return (
     <PageTransition>
       <PageHero
-        eyebrow="Approved Service"
+        eyebrow={t("approval.detail.eyebrow", "Approved Service")}
         title={displayTitle}
-        description={`${menu.serve_at ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(menu.serve_at)) : "No service date"}${menu.meal_type ? ` · ${menu.meal_type}` : ""}`}
+        description={`${menu.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}${menu.meal_type ? ` · ${menu.meal_type}` : ""}`}
       />
 
       <div className="grid gap-3 md:grid-cols-2">
         <Card className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Menu metadata</p>
-          <p><strong>Status:</strong> <span className="capitalize">{menu.status}</span></p>
-          <p><strong>Invitees:</strong> {menu.invitee_count ?? "-"}</p>
-          <p><strong>Restrictions:</strong> {menu.restrictions?.length ? menu.restrictions.join(", ") : "None"}</p>
-          <p><strong>Chef notes:</strong> {menu.notes ?? "No chef notes"}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("approval.detail.menuMetadata", "Menu metadata")}</p>
+          <p><strong>{t("approval.status", "Status")}:</strong> <span className="capitalize">{menu.status}</span></p>
+          <p><strong>{t("approval.invitees", "Invitees")}:</strong> {menu.invitee_count ?? "-"}</p>
+          <p><strong>{t("approval.detail.restrictions", "Restrictions")}:</strong> {menu.restrictions?.length ? menu.restrictions.join(", ") : t("approval.detail.none", "None")}</p>
+          <p><strong>{t("approval.detail.chefNotes", "Chef notes")}:</strong> {menu.notes ?? t("approval.detail.noChefNotes", "No chef notes")}</p>
         </Card>
         <Card className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Selected option</p>
-          <p className="font-serif text-2xl">{resolveOptionDisplayTitle(approvedOption) ?? "Approved option"}</p>
-          <p className="text-sm text-muted-foreground">{approvedOption?.concept_summary ?? approvedOption?.concept ?? "No concept summary."}</p>
-          <p className="text-sm"><strong>Beverage pairing:</strong> {approvedOption?.beverage_pairing ?? "Not specified"}</p>
-          <p className="text-sm"><strong>Option chef notes:</strong> {approvedOption?.chef_notes ?? "No option notes"}</p>
-          {heroImageUrl ? <img src={heroImageUrl} alt="Menu hero" className="mt-2 h-40 w-full rounded-xl object-cover" /> : null}
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("approval.detail.selectedOption", "Selected option")}</p>
+          <p className="font-serif text-2xl">{resolveOptionDisplayTitle(approvedOption) ?? t("approval.detail.approvedOption", "Approved option")}</p>
+          <p className="text-sm text-muted-foreground">{approvedOption?.concept_summary ?? approvedOption?.concept ?? t("approval.detail.noConceptSummary", "No concept summary.")}</p>
+          <p className="text-sm"><strong>{t("approval.detail.beveragePairing", "Beverage pairing")}:</strong> {approvedOption?.beverage_pairing ?? t("approval.detail.notSpecified", "Not specified")}</p>
+          <p className="text-sm"><strong>{t("approval.detail.optionChefNotes", "Option chef notes")}:</strong> {approvedOption?.chef_notes ?? t("approval.detail.noOptionNotes", "No option notes")}</p>
+          {heroImageUrl ? <img src={heroImageUrl} alt={t("approval.detail.menuHero", "Menu hero")} className="mt-2 h-40 w-full rounded-xl object-cover" /> : null}
         </Card>
       </div>
 
       <Card className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-serif text-2xl">Dishes</h2>
+          <h2 className="font-serif text-2xl">{t("approval.detail.dishes", "Dishes")}</h2>
           <ShoppingListButton menuId={menu.id} />
         </div>
         {(dishes ?? []).length ? (
           <div className="space-y-3">
             {(dishes ?? []).map((dish, index) => (
               <div key={dish.id} className="rounded-2xl border border-border/70 bg-card/70 p-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{dish.course_label ?? `Course ${dish.course_no}`}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{dish.course_label ?? `${t("approval.detail.course", "Course")} ${dish.course_no}`}</p>
                 <p className="font-medium">{dish.dish_name}</p>
                 <p className="text-sm text-muted-foreground">{dish.description}</p>
-                <p className="mt-2 text-xs"><strong>Plating:</strong> {dish.plating_notes ?? "No plating notes"}</p>
-                <p className="text-xs"><strong>Decoration:</strong> {dish.decoration_notes ?? "No decoration notes"}</p>
+                <p className="mt-2 text-xs"><strong>{t("approval.detail.plating", "Plating")}:</strong> {dish.plating_notes ?? t("approval.detail.noPlatingNotes", "No plating notes")}</p>
+                <p className="text-xs"><strong>{t("approval.detail.decoration", "Decoration")}:</strong> {dish.decoration_notes ?? t("approval.detail.noDecorationNotes", "No decoration notes")}</p>
                 {dishImageUrls[index] ? <img src={dishImageUrls[index] ?? undefined} alt={dish.dish_name} className="mt-2 h-36 w-full rounded-xl object-cover md:h-40 md:w-64" /> : null}
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No dishes available for the approved option.</p>
+          <p className="text-sm text-muted-foreground">{t("approval.detail.noDishes", "No dishes available for the approved option.")}</p>
         )}
       </Card>
 
       <Card className="space-y-2">
-        <h2 className="font-serif text-2xl">Cooking guidance</h2>
-        <p className="text-sm text-muted-foreground">{cookPlan?.overview ?? "No cook overview yet."}</p>
-        <p className="text-sm"><strong>Mise en place:</strong> {cookPlan?.mise_en_place ?? "Not generated"}</p>
-        <p className="text-sm"><strong>Plating overview:</strong> {cookPlan?.plating_overview ?? "Not generated"}</p>
-        <p className="text-sm"><strong>Service notes:</strong> {cookPlan?.service_notes ?? "Not generated"}</p>
+        <h2 className="font-serif text-2xl">{t("approval.detail.cookingGuidance", "Cooking guidance")}</h2>
+        <p className="text-sm text-muted-foreground">{cookPlan?.overview ?? t("approval.detail.noCookOverview", "No cook overview yet.")}</p>
+        <p className="text-sm"><strong>{t("cook.miseEnPlace", "Mise en place")}:</strong> {cookPlan?.mise_en_place ?? t("approval.detail.notGenerated", "Not generated")}</p>
+        <p className="text-sm"><strong>{t("approval.detail.platingOverview", "Plating overview")}:</strong> {cookPlan?.plating_overview ?? t("approval.detail.notGenerated", "Not generated")}</p>
+        <p className="text-sm"><strong>{t("cook.serviceNotes", "Service notes")}:</strong> {cookPlan?.service_notes ?? t("approval.detail.notGenerated", "Not generated")}</p>
         {(cookSteps ?? []).length ? (
           <div className="space-y-2">
             {(cookSteps ?? []).map((step) => (
@@ -134,7 +137,7 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
       </Card>
 
       <Card>
-        <p className="text-sm text-muted-foreground">Shopping list status: {shoppingList ? `${shoppingItems?.length ?? 0} items prepared` : "Not generated yet"}.</p>
+        <p className="text-sm text-muted-foreground">{t("approval.detail.shoppingListStatus", "Shopping list status")}: {shoppingList ? `${shoppingItems?.length ?? 0} ${t("approval.detail.itemsPrepared", "items prepared")}` : t("approval.detail.notGeneratedYet", "Not generated yet")}.</p>
       </Card>
     </PageTransition>
   );

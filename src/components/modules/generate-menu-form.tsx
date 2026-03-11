@@ -16,6 +16,7 @@ import { MenuOption } from "@/types/domain";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/i18n/i18n-provider";
 
 const restrictionOptions = ["seafood", "shellfish", "gluten", "lactose", "peanuts", "tree nuts", "eggs", "soy", "sesame", "vegetarian", "vegan", "pork-free", "diabetes type 1", "diabetes type 2"];
 const mealTypes: FormValues["mealType"][] = ["breakfast", "brunch", "lunch", "mid-afternoon", "dinner"];
@@ -103,6 +104,7 @@ async function requestMenuImages(menuId: string, prioritizedOptionId?: string) {
 }
 
 export function GenerateMenuForm() {
+  const { t } = useI18n();
   const [menus, setMenus] = useState<MenuOption[]>([]);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -232,12 +234,12 @@ export function GenerateMenuForm() {
       <Card variant="glass">
         <form className="space-y-5" onSubmit={onSubmit}>
           <div className="space-y-2">
-            <h2 className="font-serif text-3xl">Compose a signature service</h2>
-            <p className="text-sm text-muted-foreground">Design a cinematic dining journey with structured constraints, guest context, and a luxurious final reveal.</p>
+            <h2 className="font-serif text-3xl">{t("generate.form.title", "Compose a signature service")}</h2>
+            <p className="text-sm text-muted-foreground">{t("generate.form.description", "Design a cinematic dining journey with structured constraints, guest context, and a luxurious final reveal.")}</p>
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Meal Type</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("generate.form.mealType", "Meal Type")}</p>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
               {mealTypes.map((item) => (
                 <button
@@ -256,7 +258,7 @@ export function GenerateMenuForm() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Course Count</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("generate.form.courseCount", "Course Count")}</p>
             <div className="flex flex-wrap gap-2">
               {courseCounts.map((count) => (
                 <button
@@ -268,7 +270,7 @@ export function GenerateMenuForm() {
                     selectedCourseCount === count ? "border-primary/40 bg-primary/10 text-primary" : "border-border/70 bg-card/70 text-muted-foreground",
                   )}
                 >
-                  {count} courses
+                  {count} {t("generate.form.courses", "courses")}
                 </button>
               ))}
             </div>
@@ -276,33 +278,33 @@ export function GenerateMenuForm() {
 
           <div className="grid gap-3 md:grid-cols-2">
             <label className="space-y-2">
-              <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><Users size={14} />Invitees</span>
-              <Input type="number" min={1} max={60} {...form.register("inviteeCount", { valueAsNumber: true })} placeholder="Guest count" />
+              <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><Users size={14} />{t("approval.invitees", "Invitees")}</span>
+              <Input type="number" min={1} max={60} {...form.register("inviteeCount", { valueAsNumber: true })} placeholder={t("generate.form.guestCount", "Guest count")} />
             </label>
             <label className="space-y-2">
-              <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><CalendarClock size={14} />Service Time</span>
+              <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><CalendarClock size={14} />{t("generate.form.serviceTime", "Service Time")}</span>
               <Input type="datetime-local" {...form.register("serveAt")} />
-              {servicePreview ? <p className="text-xs text-muted-foreground">Scheduled for {servicePreview}</p> : null}
+              {servicePreview ? <p className="text-xs text-muted-foreground">{t("generate.form.scheduledFor", "Scheduled for")} {servicePreview}</p> : null}
               {form.formState.errors.serveAt ? <p className="text-xs text-destructive">{form.formState.errors.serveAt.message}</p> : null}
             </label>
           </div>
 
           <label className="space-y-2">
-            <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Chef Notes</span>
-            <Textarea {...form.register("notes")} placeholder="Desired produce, preferred regions, plating cues, or thematic inspiration." />
+            <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("generate.form.chefNotes", "Chef Notes")}</span>
+            <Textarea {...form.register("notes")} placeholder={t("generate.form.chefNotesPlaceholder", "Desired produce, preferred regions, plating cues, or thematic inspiration.")} />
           </label>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Restrictions per individual</p>
-              <Badge variant="accent">{(form.watch("restrictions") ?? []).length} unique restrictions</Badge>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("generate.form.restrictionsPerIndividual", "Restrictions per individual")}</p>
+              <Badge variant="accent">{(form.watch("restrictions") ?? []).length} {t("generate.form.uniqueRestrictions", "unique restrictions")}</Badge>
             </div>
             <div className="space-y-3">
               {(form.watch("inviteePreferences") ?? []).slice(0, Math.max(1, inviteeCount)).map((invitee, inviteeIndex) => (
                 <Card key={`invitee-${inviteeIndex}`} variant="muted" className="space-y-3 p-4">
                   <div className="grid gap-2 md:grid-cols-2">
                     <label className="space-y-1">
-                      <span className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground"><UserRound size={13} />Label</span>
+                      <span className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground"><UserRound size={13} />{t("generate.form.label", "Label")}</span>
                       <Input
                         value={invitee.label}
                         onChange={(event) => {
@@ -311,11 +313,11 @@ export function GenerateMenuForm() {
                       />
                     </label>
                     <label className="space-y-1">
-                      <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">First name (optional)</span>
+                      <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{t("generate.form.firstNameOptional", "First name (optional)")}</span>
                       <Input
                         value={invitee.name ?? ""}
                         onChange={(event) => form.setValue(`inviteePreferences.${inviteeIndex}.name`, event.target.value)}
-                        placeholder="e.g. Ana"
+                        placeholder={t("generate.form.firstNameExample", "e.g. Ana")}
                       />
                     </label>
                   </div>
@@ -353,7 +355,7 @@ export function GenerateMenuForm() {
 
           <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
             <Sparkles size={16} />
-            {isLoading ? "Generating luxurious options..." : "Generate 3 curated options"}
+            {isLoading ? t("generate.form.generating", "Generating luxurious options...") : t("generate.form.generateOptions", "Generate 3 curated options")}
           </Button>
         </form>
       </Card>
@@ -367,7 +369,7 @@ export function GenerateMenuForm() {
       ) : null}
 
       <motion.div layout className="space-y-4">
-        {menus.length > 0 ? <Badge variant="success">{menus.length} options generated</Badge> : null}
+        {menus.length > 0 ? <Badge variant="success">{menus.length} {t("generate.form.optionsGenerated", "options generated")}</Badge> : null}
         {menus.map((menu) => (
           <MenuOptionCard
             key={menu.id}

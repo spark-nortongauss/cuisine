@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/components/i18n/i18n-provider";
 
 type ApprovedMenuRow = {
   id: string;
@@ -31,6 +32,7 @@ function statusVariant(status: string): "default" | "accent" | "success" | "warn
 
 export function ApprovedMenusTable({ rows }: Props) {
   const router = useRouter();
+  const { locale, t } = useI18n();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export function ApprovedMenusTable({ rows }: Props) {
 
   async function deleteSelected() {
     if (!selectedIds.length || isDeleting) return;
-    const confirmed = window.confirm(`Delete ${selectedIds.length} approved menu${selectedIds.length > 1 ? "s" : ""}? This cannot be undone.`);
+    const confirmed = window.confirm(t("approval.deleteConfirm", `Delete ${selectedIds.length} approved menu${selectedIds.length > 1 ? "s" : ""}? This cannot be undone.`));
     if (!confirmed) return;
 
     setIsDeleting(true);
@@ -61,7 +63,7 @@ export function ApprovedMenusTable({ rows }: Props) {
 
     if (!res.ok) {
       const payload = (await res.json().catch(() => null)) as { error?: string } | null;
-      setError(payload?.error ?? "Failed to delete approved menus.");
+      setError(payload?.error ?? t("approval.deleteError", "Failed to delete approved menus."));
       setIsDeleting(false);
       return;
     }
@@ -74,10 +76,10 @@ export function ApprovedMenusTable({ rows }: Props) {
   return (
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Approved menus</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("approval.title", "Approved menus")}</p>
         <Button variant="outline" size="sm" onClick={deleteSelected} disabled={!selectedIds.length || isDeleting}>
           {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-          Delete selected ({selectedIds.length})
+          {t("approval.deleteSelected", "Delete selected")} ({selectedIds.length})
         </Button>
       </div>
 
@@ -85,13 +87,13 @@ export function ApprovedMenusTable({ rows }: Props) {
         <table className="premium-table">
           <thead>
             <tr>
-              <th className="px-3 py-2"><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="Select all menus" /></th>
-              <th className="px-3 py-2">Menu</th>
-              <th className="px-3 py-2">Meal</th>
-              <th className="px-3 py-2">Service</th>
-              <th className="px-3 py-2">Invitees</th>
-              <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">Updated</th>
+              <th className="px-3 py-2"><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label={t("approval.selectAll", "Select all menus")} /></th>
+              <th className="px-3 py-2">{t("common.table.menu")}</th>
+              <th className="px-3 py-2">{t("common.table.meal")}</th>
+              <th className="px-3 py-2">{t("common.table.service")}</th>
+              <th className="px-3 py-2">{t("approval.invitees", "Invitees")}</th>
+              <th className="px-3 py-2">{t("approval.status", "Status")}</th>
+              <th className="px-3 py-2">{t("common.table.updated")}</th>
             </tr>
           </thead>
           <tbody>
@@ -109,7 +111,7 @@ export function ApprovedMenusTable({ rows }: Props) {
                     type="checkbox"
                     checked={selectedIds.includes(row.id)}
                     onChange={() => toggleRow(row.id)}
-                    aria-label={`Select ${row.title}`}
+                    aria-label={t("approval.selectMenu", `Select ${row.title}`)}
                   />
                 </td>
                 <td className="px-3 py-3">
@@ -117,10 +119,10 @@ export function ApprovedMenusTable({ rows }: Props) {
                   <p className="text-xs text-muted-foreground">{row.approvedOptionTitle}</p>
                 </td>
                 <td className="px-3 py-3">{row.mealType}</td>
-                <td className="px-3 py-3">{row.serveAt ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(row.serveAt)) : "No date"}</td>
+                <td className="px-3 py-3">{row.serveAt ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(row.serveAt)) : t("common.noDate")}</td>
                 <td className="px-3 py-3">{row.inviteeCount ?? "-"}</td>
                 <td className="px-3 py-3 capitalize"><Badge variant={statusVariant(row.status)}>{row.status}</Badge></td>
-                <td className="px-3 py-3">{new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(row.updatedAt))}</td>
+                <td className="px-3 py-3">{new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(row.updatedAt))}</td>
               </motion.tr>
             ))}
           </tbody>

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import type { Database } from "@/lib/supabase/database.types";
+import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
 
 type ShoppingMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
@@ -22,6 +23,9 @@ type ShoppingListView = {
 };
 
 export default async function ShoppingIndexPage() {
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
+
   const supabaseServer = await createSupabaseServerClient();
   const {
     data: { user },
@@ -46,7 +50,7 @@ export default async function ShoppingIndexPage() {
       id: row.id,
       menuId: row.menu_id,
       menuTitle: resolveMenuDisplayTitle(menu, approvedOption),
-      mealType: menu?.meal_type ?? "Service",
+      mealType: menu?.meal_type ?? t("common.mealFallback", "Service"),
       serveAt: menu?.serve_at ?? null,
       itemCount: items.length,
       purchasedCount,
@@ -57,9 +61,9 @@ export default async function ShoppingIndexPage() {
   return (
     <PageTransition>
       <PageHero
-        eyebrow="Operations"
-        title="Shopping intelligence"
-        description="Track procurement progress with premium operational clarity and move directly into cooking execution."
+        eyebrow={t("shopping.eyebrow", "Operations")}
+        title={t("shopping.title", "Shopping intelligence")}
+        description={t("shopping.description", "Track procurement progress with premium operational clarity and move directly into cooking execution.")}
       />
 
       {lists.length ? (
@@ -67,12 +71,12 @@ export default async function ShoppingIndexPage() {
           <table className="premium-table">
             <thead>
               <tr>
-                <th className="px-3 py-2">Menu</th>
-                <th className="px-3 py-2">Meal</th>
-                <th className="px-3 py-2">Service</th>
-                <th className="px-3 py-2">Items</th>
-                <th className="px-3 py-2">Progress</th>
-                <th className="px-3 py-2">Updated</th>
+                <th className="px-3 py-2">{t("common.table.menu")}</th>
+                <th className="px-3 py-2">{t("common.table.meal")}</th>
+                <th className="px-3 py-2">{t("common.table.service")}</th>
+                <th className="px-3 py-2">{t("common.table.items")}</th>
+                <th className="px-3 py-2">{t("common.table.progress")}</th>
+                <th className="px-3 py-2">{t("common.table.updated")}</th>
               </tr>
             </thead>
             <tbody>
@@ -84,7 +88,7 @@ export default async function ShoppingIndexPage() {
                       <Link href={`/shopping/${list.menuId}`}>{list.menuTitle}</Link>
                     </td>
                     <td className="px-3 py-3">{list.mealType}</td>
-                    <td className="px-3 py-3">{list.serveAt ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(list.serveAt)) : "No date"}</td>
+                    <td className="px-3 py-3">{list.serveAt ? formatWithLocale(locale, new Date(list.serveAt), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}</td>
                     <td className="px-3 py-3">{list.itemCount}</td>
                     <td className="px-3 py-3">
                       <Badge variant={complete ? "success" : "accent"} className="gap-1.5">
@@ -92,7 +96,7 @@ export default async function ShoppingIndexPage() {
                         {list.purchasedCount}/{list.itemCount}
                       </Badge>
                     </td>
-                    <td className="px-3 py-3">{new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(list.updatedAt))}</td>
+                    <td className="px-3 py-3">{formatWithLocale(locale, new Date(list.updatedAt), { dateStyle: "medium" })}</td>
                   </tr>
                 );
               })}
@@ -101,7 +105,7 @@ export default async function ShoppingIndexPage() {
         </Card>
       ) : (
         <Card>
-          <p className="text-sm text-muted-foreground">No shopping lists yet. Open an approved menu and generate one.</p>
+          <p className="text-sm text-muted-foreground">{t("shopping.empty", "No shopping lists yet. Open an approved menu and generate one.")}</p>
         </Card>
       )}
     </PageTransition>
