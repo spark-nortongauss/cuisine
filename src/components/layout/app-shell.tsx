@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
 import { useI18n } from "@/components/i18n/i18n-provider";
 import { AmbientOrbs } from "@/components/layout/ambient-orbs";
+import { ChefAssistant } from "@/components/modules/chef-assistant";
 
 function isPublicLayout(pathname: string | null) {
   if (!pathname) return false;
@@ -51,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
       ) : null}
       <main className="mx-auto max-w-7xl p-4 md:p-8">{children}</main>
+      {!publicLayout ? <ChefAssistant /> : null}
       {!publicLayout ? (
         <nav className="fixed inset-x-2 bottom-2 z-50 rounded-3xl border border-accent/40 bg-card/95 p-1.5 shadow-luxe backdrop-blur-xl md:left-1/2 md:max-w-3xl md:-translate-x-1/2">
           <ul className="grid grid-cols-6 gap-1">
