@@ -26,6 +26,22 @@ async function requestStructuredJson<T>(prompt: string): Promise<T> {
   return JSON.parse(completion.output_text) as T;
 }
 
+function stringifyCookPlanField(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => (typeof item === "string" ? item.trim() : JSON.stringify(item)))
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, fieldValue]) => `${key}: ${typeof fieldValue === "string" ? fieldValue : JSON.stringify(fieldValue)}`)
+      .join("\n");
+  }
+  return "";
+}
+
 const dishSchema = z.object({
   course: z.string().min(1),
   name: z.string().min(1),
@@ -131,5 +147,14 @@ Rules:
 8) Keep output schema-compatible and deterministic.`;
 
   const payload = await requestStructuredJson<unknown>(prompt);
-  return cookPlanAiSchema.parse(payload);
+  const normalizedPayload = payload && typeof payload === "object"
+    ? {
+        ...(payload as Record<string, unknown>),
+        mise_en_place: stringifyCookPlanField((payload as Record<string, unknown>).mise_en_place),
+        plating_overview: stringifyCookPlanField((payload as Record<string, unknown>).plating_overview),
+        service_notes: stringifyCookPlanField((payload as Record<string, unknown>).service_notes),
+      }
+    : payload;
+
+  return cookPlanAiSchema.parse(normalizedPayload);
 }
