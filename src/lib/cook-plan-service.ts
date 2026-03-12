@@ -9,6 +9,9 @@ type CookStepPayload = {
   phase: string;
   title: string;
   details: string;
+  technique: string;
+  knife_cut?: string | null;
+  utensils: string[];
   dish_name?: string | null;
   relative_minutes?: number | null;
 };
@@ -25,6 +28,12 @@ function normalizeCookStep(step: CookStepPayload, index: number): CookStepPayloa
     phase: step.phase.trim() || "cooking phase",
     title: step.title.trim() || `Step ${index + 1}`,
     details: cleanedDetails || step.details.trim(),
+    technique: step.technique.trim() || "Chef technique",
+    knife_cut: step.knife_cut?.trim() || null,
+    utensils: (() => {
+      const cleaned = step.utensils.map((utensil) => utensil.trim()).filter(Boolean);
+      return cleaned.length ? cleaned : ["Chef knife"];
+    })(),
     dish_name: step.dish_name?.trim() || null,
     relative_minutes: Number.isInteger(step.relative_minutes ?? null) ? step.relative_minutes ?? null : null,
   };
@@ -146,6 +155,9 @@ export async function generateCookPlanForMenu({
         phase: step.phase,
         title: step.title,
         details: step.details,
+        technique: step.technique,
+        knife_cut: step.knife_cut ?? null,
+        utensils: step.utensils,
         dish_name: step.dish_name ?? null,
         relative_minutes: step.relative_minutes ?? null,
       })),

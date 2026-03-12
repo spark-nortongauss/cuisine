@@ -198,8 +198,11 @@ Return ONLY valid JSON with keys:
 Rules:
 1) Keep language practical, imperative, and beginner-safe.
 2) Use explicit timeline phases in steps.phase such as: day-before prep, mise-en-place, cooking phase, resting/holding, plating, service.
-3) steps must be an ordered array where each item has: step_no (int), phase, title, details, dish_name(optional), relative_minutes(optional int).
-4) details must be rich and structured in readable bullet-like lines including (when relevant):
+3) steps must be an ordered array where each item has: step_no (int), phase, title, details, technique, knife_cut(optional nullable), utensils(array of strings), dish_name(optional), relative_minutes(optional int).
+4) technique must use professional kitchen terminology but stay beginner-friendly.
+5) knife_cut should be present only when relevant (e.g. julienne, brunoise, chiffonade, dice, mince, paysanne) otherwise null.
+6) utensils must include the key tools and utensils needed for the step.
+7) details must be rich and structured in readable bullet-like lines including (when relevant):
    - objective
    - required ingredients/tools
    - exact actions
@@ -208,10 +211,10 @@ Rules:
    - visual/texture cue of doneness
    - common mistakes warning
    - advance prep vs last-minute action
-5) relative_minutes should be tied to service time, negative for before service and 0 at service.
-6) End with explicit plating and final service sequence.
-7) Avoid vague phrasing like "cook until done"; always include practical cues.
-8) Keep output schema-compatible and deterministic.`;
+8) relative_minutes should be tied to service time, negative for before service and 0 at service.
+9) End with explicit plating and final service sequence.
+10) Avoid vague phrasing like "cook until done"; always include practical cues.
+11) Keep output schema-compatible and deterministic.`;
 
   const payload = await requestStructuredJson<unknown>(prompt);
   const normalizedPayload = payload && typeof payload === "object"

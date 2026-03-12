@@ -70,7 +70,7 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
 
   const { data: steps } = await supabase
     .from("cook_steps")
-    .select("id, step_no, phase, title, details, dish_name, relative_minutes")
+    .select("id, step_no, phase, title, details, technique, knife_cut, utensils, dish_name, relative_minutes")
     .eq("cook_plan_id", cookPlan.id)
     .order("relative_minutes", { ascending: true, nullsFirst: true })
     .order("step_no", { ascending: true });
@@ -109,6 +109,11 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
                     <li key={`${step.id}-${line}`} className="flex items-start gap-2"><CookingPot size={14} className="mt-0.5 text-primary" /> <span>{line}</span></li>
                   ))}
                 </ul>
+                <div className="mt-3 space-y-2 text-sm">
+                  <p><strong>Technique:</strong> {step.technique}</p>
+                  {step.knife_cut ? <p><strong>Knife Cut:</strong> {step.knife_cut}</p> : null}
+                  <p><strong>Tools &amp; Utensils:</strong> {(step.utensils ?? []).join(", ") || "Chef knife"}</p>
+                </div>
               </div>
             );
           })}

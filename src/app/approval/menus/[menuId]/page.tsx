@@ -8,6 +8,7 @@ import { resolveMenuDisplayTitle, resolveOptionDisplayTitle } from "@/lib/menu-d
 import { resolveStorageImageUrl } from "@/lib/menu-images";
 import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
 import { FavoriteMenuButton } from "@/components/modules/favorite-menu-button";
+import { DownloadMenuPdfButton } from "@/components/modules/download-menu-pdf-button";
 
 export default async function ApprovedMenuDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -102,6 +103,7 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
           <div className="flex items-center gap-2">
             <FavoriteMenuButton menuId={menu.id} initialFavorited={Boolean(favorite)} />
             <ShoppingListButton menuId={menu.id} />
+            <DownloadMenuPdfButton menuId={menu.id} />
           </div>
         </div>
         {(dishes ?? []).length ? (

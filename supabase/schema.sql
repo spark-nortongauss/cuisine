@@ -109,6 +109,9 @@ create table if not exists public.cook_steps (
   details text not null,
   dish_name text,
   relative_minutes integer,
+  technique text,
+  knife_cut text,
+  utensils text[],
   created_at timestamptz not null default now()
 );
 
