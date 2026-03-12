@@ -51,10 +51,13 @@ export type Database = {
           details: string;
           dish_name: string | null;
           id: string;
+          knife_cut: string | null;
           phase: string;
           relative_minutes: number | null;
           step_no: number;
+          technique: string | null;
           title: string;
+          utensils: string[] | null;
         };
         Insert: {
           cook_plan_id: string;
@@ -62,10 +65,13 @@ export type Database = {
           details: string;
           dish_name?: string | null;
           id?: string;
+          knife_cut?: string | null;
           phase: string;
           relative_minutes?: number | null;
           step_no: number;
+          technique?: string | null;
           title: string;
+          utensils?: string[] | null;
         };
         Update: {
           cook_plan_id?: string;
@@ -73,10 +79,13 @@ export type Database = {
           details?: string;
           dish_name?: string | null;
           id?: string;
+          knife_cut?: string | null;
           phase?: string;
           relative_minutes?: number | null;
           step_no?: number;
+          technique?: string | null;
           title?: string;
+          utensils?: string[] | null;
         };
         Relationships: [
           {

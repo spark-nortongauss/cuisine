@@ -21,6 +21,9 @@ export const cookPlanAiSchema = z.object({
       phase: z.string().min(1),
       title: z.string().min(1),
       details: z.string().min(1),
+      technique: z.string().min(1),
+      knife_cut: z.string().nullable().optional(),
+      utensils: z.array(z.string().min(1)).min(1),
       dish_name: z.string().nullable().optional(),
       relative_minutes: z.number().int().nullable().optional(),
     }),
@@ -70,6 +73,9 @@ export type NormalizedCookPlan = {
     phase: string;
     title: string;
     details: string;
+    technique: string | null;
+    knife_cut: string | null;
+    utensils: string[] | null;
     dish_name: string | null;
     relative_minutes: number | null;
   }[];

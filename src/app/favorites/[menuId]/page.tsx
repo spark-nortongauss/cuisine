@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import type { Database } from "@/lib/supabase/database.types";
+import { CookAgainButton } from "@/components/modules/cook-again-button";
 
 type FavoriteMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
@@ -48,6 +49,7 @@ export default async function FavoriteDetailPage({ params }: { params: Promise<{
       <Card variant="feature" className="space-y-2">
         <Badge variant="accent" className="w-fit">Saved because post-meal rating exceeded threshold</Badge>
         <p className="text-sm">Favorite rating: {favorite.rating_percent}%</p>
+        <CookAgainButton menuId={menuId} />
       </Card>
     </PageTransition>
   );
