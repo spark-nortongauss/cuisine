@@ -60,8 +60,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ men
     courses: dishPayload.length,
     dishes: dishPayload,
   });
+  const pdfBytes = new Uint8Array(pdf);
 
-  return new NextResponse(pdf, {
+  return new NextResponse(pdfBytes, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
