@@ -40,8 +40,16 @@ export function DownloadMenuPdfButton({ menuId }: { menuId: string }) {
 
   return (
     <>
-      <Button type="button" variant="outline" onClick={openPreview} disabled={loading}>
-        {loading ? "Preparing PDF..." : "Download PDF Menu"}
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        onClick={openPreview}
+        disabled={loading}
+        aria-label={loading ? "Preparing PDF..." : "Download PDF Menu"}
+        title={loading ? "Preparing PDF..." : "Download PDF Menu"}
+      >
+        <Download size={16} />
       </Button>
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal>

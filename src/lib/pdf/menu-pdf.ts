@@ -7,12 +7,14 @@ type MenuDishPdf = {
   description: string;
   ingredients: string;
   platingNotes: string | null;
+  decorationNotes: string | null;
   imageUrl: string | null;
 };
 
 type MenuPdfPayload = {
   title: string;
-  mealType: string;
+  mealType: string | null;
+  serviceDateTime?: string | null;
   courses: number;
   dishes: MenuDishPdf[];
 };
@@ -22,19 +24,27 @@ export function buildMichelinMenuPdf(payload: MenuPdfPayload): Buffer {
 
   lines.push({ text: payload.title, size: 26, centered: true });
   lines.push({ text: "", size: 10 });
-  lines.push({ text: `${payload.mealType} · ${payload.courses} courses`, size: 12, centered: true });
+  lines.push({ text: `${payload.mealType ?? "Menu"} · ${payload.courses} courses`, size: 12, centered: true });
+  if (payload.serviceDateTime) {
+    lines.push({ text: payload.serviceDateTime, size: 11, centered: true });
+  }
   lines.push({ text: "", size: 10 });
+
+  if (!payload.dishes.length) {
+    lines.push({ text: "No dishes available.", size: 12, centered: true });
+  }
 
   payload.dishes.forEach((dish, index) => {
     lines.push({ text: dish.dishName.toUpperCase(), size: 18, centered: true });
     lines.push({ text: dish.description, size: 11, centered: true });
     lines.push({ text: `Ingredients: ${dish.ingredients}`, size: 10 });
     if (dish.platingNotes) lines.push({ text: `Plating: ${dish.platingNotes}`, size: 10 });
+    if (dish.decorationNotes) lines.push({ text: `Decoration: ${dish.decorationNotes}`, size: 10 });
     if (dish.imageUrl) lines.push({ text: `Image: ${dish.imageUrl}`, size: 9 });
     if (index < payload.dishes.length - 1) lines.push({ text: "", size: 10 });
   });
 
-  const content: string[] = ["BT", "/F1 12 Tf", "50 790 Td"];
+  const content: string[] = [];
   let currentY = 790;
 
   for (const line of lines) {
@@ -48,13 +58,13 @@ export function buildMichelinMenuPdf(payload: MenuPdfPayload): Buffer {
       ? Math.max(50, 300 - (line.text.length * (fontSize * 0.25)))
       : 50;
 
+    content.push("BT");
     content.push(`/${"F1"} ${fontSize} Tf`);
-    content.push(`${x.toFixed(2)} ${y.toFixed(2)} Td`);
+    content.push(`1 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)} Tm`);
     content.push(`(${escaped}) Tj`);
-    content.push(`${-x.toFixed(2)} ${-y.toFixed(2)} Td`);
+    content.push("ET");
   }
 
-  content.push("ET");
   const contentStream = content.join("\n");
   const objects = [
     "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",

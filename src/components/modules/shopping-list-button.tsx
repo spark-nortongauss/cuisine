@@ -34,9 +34,14 @@ export function ShoppingListButton({ menuId }: { menuId: string }) {
 
   return (
     <div className="space-y-2">
-      <Button onClick={ensureShoppingList} disabled={isLoading}>
+      <Button
+        onClick={ensureShoppingList}
+        disabled={isLoading}
+        size="icon"
+        aria-label={isLoading ? "Preparing shopping list..." : "Shopping List"}
+        title={isLoading ? "Preparing shopping list..." : "Shopping List"}
+      >
         {isLoading ? <Loader2 size={16} className="animate-spin" /> : <ShoppingBasket size={16} />}
-        {isLoading ? "Preparing shopping list..." : "Shopping List"}
       </Button>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
