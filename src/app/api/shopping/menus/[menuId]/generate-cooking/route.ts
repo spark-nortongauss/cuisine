@@ -24,22 +24,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ me
       return NextResponse.json({ success: false, code: "SHOPPING_LIST_NOT_FOUND", error: "Shopping list not found" }, { status: 404 });
     }
 
-    const { data: items } = await supabase.from("shopping_items").select("id, purchased").eq("shopping_list_id", shoppingList.id);
-    const totalItems = items?.length ?? 0;
-    const purchasedItems = (items ?? []).filter((item) => Boolean(item.purchased)).length;
-    const allPurchased = totalItems > 0 && purchasedItems === totalItems;
-
-    if (!allPurchased) {
-      return NextResponse.json(
-        {
-          success: false,
-          code: "SHOPPING_INCOMPLETE",
-          error: "All shopping items must be marked as purchased before generating cooking.",
-        },
-        { status: 400 },
-      );
-    }
-
     const result = await generateCookPlanForMenu({
       menuId,
       ownerId: user.id,

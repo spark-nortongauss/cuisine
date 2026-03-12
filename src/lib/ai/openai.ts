@@ -87,7 +87,74 @@ Ensure "options" contains exactly 3 menu options.`;
 
 export type ShoppingListAiItem = z.infer<typeof shoppingItemAiSchema>;
 
+const shoppingPriceEstimateSchema = z.object({
+  index: z.number().int().min(0),
+  estimated_unit_price_eur: z.number().positive().nullable().optional(),
+  estimated_total_price_eur: z.number().positive().nullable().optional(),
+});
+
+const shoppingPriceEstimatePayloadSchema = z.object({
+  items: z.array(shoppingPriceEstimateSchema),
+  estimated_shopping_total_eur: z.number().positive().nullable().optional(),
+});
+
+const platingGuidanceItemSchema = z.object({
+  dish_name: z.string().min(1),
+  plating_notes: z.string().min(1),
+  decoration_notes: z.string().min(1),
+  image_prompt: z.string().min(1),
+});
+
+const platingGuidancePayloadSchema = z.object({
+  dishes: z.array(platingGuidanceItemSchema),
+});
+
 export type CookPlanPayload = z.infer<typeof cookPlanAiSchema>;
+
+export async function estimateShoppingPricesForFrance(items: Array<{
+  item_name: string;
+  quantity: number | null;
+  unit: string | null;
+  section: string | null;
+}>): Promise<z.infer<typeof shoppingPriceEstimatePayloadSchema>> {
+  const prompt = `You estimate practical grocery prices in France (EUR), no live scraping, only cautious approximations.
+Return ONLY valid JSON with shape:
+{"items":[{"index":0,"estimated_unit_price_eur":2.3,"estimated_total_price_eur":4.6}],"estimated_shopping_total_eur":40.1}
+
+Rules:
+1) Keep values realistic for regular French supermarkets in 2026.
+2) If quantity/unit is unclear, return estimated_unit_price_eur and set estimated_total_price_eur to null.
+3) Numbers must be positive when provided.
+4) Don't overfit luxury ingredients unless item clearly requires it.
+5) This is an estimate only.
+
+Items (index-aligned): ${JSON.stringify(items)}`;
+
+  const payload = await requestStructuredJson<unknown>(prompt);
+  return shoppingPriceEstimatePayloadSchema.parse(payload);
+}
+
+export async function generatePlatingGuidanceForMenuOption(menuOption: MenuOption): Promise<z.infer<typeof platingGuidancePayloadSchema>> {
+  const prompt = `You are a Michelin plating coach for beginners.
+Generate plating assembly guidance for each dish and a plating-focused image prompt.
+Menu option: ${JSON.stringify(formatMenuOptionForAi(menuOption))}
+
+Return ONLY valid JSON:
+{"dishes":[{"dish_name":"...","plating_notes":"...","decoration_notes":"...","image_prompt":"..."}]}
+
+Guidance must be practical and premium, including when relevant:
+- plate/base choice
+- what goes first
+- where main component goes
+- where sauce goes
+- garnish placement
+- finishing touches
+- clean rim / serving notes
+- no markdown bullets, just clear sentences.`;
+
+  const payload = await requestStructuredJson<unknown>(prompt);
+  return platingGuidancePayloadSchema.parse(payload);
+}
 
 export async function generateShoppingListFromMenu(menuOption: MenuOption, inviteeCount: number): Promise<ShoppingListAiItem[]> {
   const prompt = `You are a Michelin operations sous-chef. Build a consolidated shopping list for ${inviteeCount} guests.

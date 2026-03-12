@@ -487,6 +487,8 @@ export type Database = {
       shopping_items: {
         Row: {
           created_at: string;
+          estimated_total_price_eur: number | null;
+          estimated_unit_price_eur: number | null;
           id: string;
           item_name: string;
           note: string | null;
@@ -500,6 +502,8 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          estimated_total_price_eur?: number | null;
+          estimated_unit_price_eur?: number | null;
           id?: string;
           item_name: string;
           note?: string | null;
@@ -513,6 +517,8 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          estimated_total_price_eur?: number | null;
+          estimated_unit_price_eur?: number | null;
           id?: string;
           item_name?: string;
           note?: string | null;
@@ -537,6 +543,7 @@ export type Database = {
       shopping_lists: {
         Row: {
           created_at: string;
+          estimated_total_eur: number | null;
           generated_by: string;
           id: string;
           menu_id: string;
@@ -544,6 +551,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          estimated_total_eur?: number | null;
           generated_by?: string;
           id?: string;
           menu_id: string;
@@ -551,6 +559,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          estimated_total_eur?: number | null;
           generated_by?: string;
           id?: string;
           menu_id?: string;

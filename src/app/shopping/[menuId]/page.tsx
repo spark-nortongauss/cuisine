@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import type { Database } from "@/lib/supabase/database.types";
 import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
+import { ensureShoppingPriceEstimates } from "@/lib/shopping-price-estimates";
 
 type ShoppingMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
@@ -31,7 +32,7 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
   if (!menu) return notFound();
   if (user?.id && menu.owner_id !== user.id) return notFound();
 
-  const { data: shoppingList } = await supabase.from("shopping_lists").select("id").eq("menu_id", menuId).maybeSingle();
+  const { data: shoppingList } = await supabase.from("shopping_lists").select("id, estimated_total_eur").eq("menu_id", menuId).maybeSingle();
 
   const menuOptions: ShoppingMenuOptionRow[] = (menu.menu_options ?? []) as ShoppingMenuOptionRow[];
   const approvedOption: ShoppingMenuOptionRow | null = menuOptions.find((option: ShoppingMenuOptionRow) => option.id === menu.approved_option_id) ?? null;
@@ -49,9 +50,13 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
     );
   }
 
+  await ensureShoppingPriceEstimates(shoppingList.id);
+
+  const { data: pricedList } = await supabase.from("shopping_lists").select("id, estimated_total_eur").eq("id", shoppingList.id).maybeSingle();
+
   const { data: items } = await supabase
     .from("shopping_items")
-    .select("id, section, item_name, quantity, unit, note, purchased")
+    .select("id, section, item_name, quantity, unit, note, purchased, estimated_unit_price_eur, estimated_total_price_eur")
     .eq("shopping_list_id", shoppingList.id)
     .order("sort_order", { ascending: true });
 
@@ -63,7 +68,7 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
         <p className="mt-2 text-sm">{t("approval.invitees", "Invitees")}: {menu.invitee_count ?? "-"}</p>
         <p className="text-sm">{t("approval.detail.restrictions", "Restrictions")}: {menu.restrictions?.length ? menu.restrictions.join(", ") : t("approval.detail.none", "None")}</p>
       </Card>
-      <ShoppingListDetail menuId={menu.id} initialItems={items ?? []} />
+      <ShoppingListDetail menuId={menu.id} initialItems={items ?? []} estimatedTotalEur={pricedList?.estimated_total_eur ?? null} />
     </PageTransition>
   );
 }

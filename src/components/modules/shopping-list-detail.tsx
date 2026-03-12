@@ -16,14 +16,17 @@ type ShoppingItem = {
   unit: string | null;
   note?: string | null;
   purchased: boolean | null;
+  estimated_unit_price_eur?: number | null;
+  estimated_total_price_eur?: number | null;
 };
 
 type Props = {
   menuId: string;
   initialItems: ShoppingItem[];
+  estimatedTotalEur: number | null;
 };
 
-export function ShoppingListDetail({ menuId, initialItems }: Props) {
+export function ShoppingListDetail({ menuId, initialItems, estimatedTotalEur }: Props) {
   const { t } = useI18n();
   const router = useRouter();
   const [items, setItems] = useState(initialItems.map((item) => ({ ...item, purchased: Boolean(item.purchased) })));
@@ -32,8 +35,7 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const checkedCount = useMemo(() => items.filter((item) => item.purchased).length, [items]);
-  const totalItems = items.length;
-  const allPurchased = totalItems > 0 && checkedCount === totalItems;
+  const eur = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
 
   async function toggleItem(itemId: string, purchased: boolean) {
     const previousValue = items.find((item) => item.id === itemId)?.purchased ?? false;
@@ -55,7 +57,7 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
   }
 
   async function generateCooking() {
-    if (!allPurchased || isGenerating) return;
+    if (isGenerating) return;
 
     setIsGenerating(true);
     setError(null);
@@ -93,16 +95,18 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
           />
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-3 space-y-2">
+          <p className="text-sm font-medium">{t("shopping.estimatedTotalFrance", "Estimated total in France")}: ~{estimatedTotalEur !== null ? eur.format(estimatedTotalEur) : t("common.notAvailable", "N/A")}</p>
+          <p className="text-xs text-muted-foreground">{t("shopping.estimateDisclaimer", "Approximate AI estimate in EUR, for planning only.")}</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
-            {allPurchased
-              ? t("shopping.allPurchased", "All items purchased. You can now generate your cooking execution timeline.")
-              : t("shopping.lockedGenerateCooking", "Generate Cooking unlocks when every shopping item is purchased.")}
+            {t("shopping.generateCookingAvailable", "Generate Cooking is available once your shopping list exists.")}
           </p>
-          <Button onClick={generateCooking} disabled={!allPurchased || isGenerating}>
+          <Button onClick={generateCooking} disabled={isGenerating}>
             {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
             {t("shopping.generateCooking", "Generate Cooking")}
           </Button>
+          </div>
         </div>
       </div>
 
@@ -112,6 +116,7 @@ export function ShoppingListDetail({ menuId, initialItems }: Props) {
             <p className="font-medium">{item.item_name}</p>
             <p className="text-xs text-muted-foreground">{item.section ?? t("shopping.general", "General")} · {item.quantity ?? "-"} {item.unit ?? ""}</p>
             {item.note ? <p className="text-xs text-muted-foreground">{t("shopping.note", "Note")}: {item.note}</p> : null}
+            <p className="text-xs text-muted-foreground">{t("shopping.estimatedItemPrice", "Estimated price")}: ~{item.estimated_total_price_eur !== null && item.estimated_total_price_eur !== undefined ? eur.format(item.estimated_total_price_eur) : item.estimated_unit_price_eur !== null && item.estimated_unit_price_eur !== undefined ? `${eur.format(item.estimated_unit_price_eur)} / ${item.unit ?? t("shopping.item", "item")}` : t("common.notAvailable", "N/A")}</p>
           </div>
           <input
             type="checkbox"
