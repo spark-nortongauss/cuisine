@@ -36,7 +36,7 @@ export function FavoriteMenuButton({ menuId, initialFavorited }: { menuId: strin
 
   return (
     <div className="space-y-1">
-      <Button onClick={favoriteMenu} disabled={isLoading || isFavorited} variant={isFavorited ? "secondary" : "default"}>
+      <Button onClick={favoriteMenu} disabled={isLoading || isFavorited} variant={isFavorited ? "subtle" : "default"}>
         {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Heart size={16} />}
         {isFavorited ? t("favorites.favorited", "Favorited") : t("favorites.favorite", "Favorite")}
       </Button>
