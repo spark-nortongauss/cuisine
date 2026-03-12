@@ -8,6 +8,7 @@ import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import { CollapsibleSections } from "@/components/ui/collapsible-section";
 import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
 import { Badge } from "@/components/ui/badge";
+import { resolveStorageImageUrl } from "@/lib/menu-images";
 
 function splitDetailPoints(details: string) {
   return details
@@ -55,6 +56,17 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
       </PageTransition>
     );
   }
+
+
+  const { data: dishes } = menu.approved_option_id
+    ? await supabase
+      .from("menu_dishes")
+      .select("id, course_no, course_label, dish_name, plating_notes, decoration_notes, image_path")
+      .eq("menu_option_id", menu.approved_option_id)
+      .order("course_no", { ascending: true })
+    : { data: [] as Array<{ id: string; course_no: number; course_label: string | null; dish_name: string; plating_notes: string | null; decoration_notes: string | null; image_path: string | null }> };
+
+  const dishImageUrls = await Promise.all((dishes ?? []).map((dish) => resolveStorageImageUrl({ supabase, path: dish.image_path })));
 
   const { data: steps } = await supabase
     .from("cook_steps")
@@ -107,7 +119,20 @@ export default async function CookPage({ params }: { params: Promise<{ menuId: s
     {
       id: "plating",
       title: t("cook.plating"),
-      content: <p className="text-sm text-muted-foreground">{cookPlan.plating_overview ?? t("cook.noPlating")}</p>,
+      content: (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">{cookPlan.plating_overview ?? t("cook.noPlating")}</p>
+          {(dishes ?? []).map((dish, index) => (
+            <div key={dish.id} className="rounded-xl border border-border/60 bg-card/70 p-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{dish.course_label ?? `${t("approval.detail.course", "Course")} ${dish.course_no}`}</p>
+              <p className="font-medium">{dish.dish_name}</p>
+              <p className="text-sm text-muted-foreground">{dish.plating_notes ?? t("approval.detail.noPlatingNotes", "No plating notes")}</p>
+              <p className="text-xs text-muted-foreground">{dish.decoration_notes ?? t("approval.detail.noDecorationNotes", "No decoration notes")}</p>
+              {dishImageUrls[index] ? <img src={dishImageUrls[index] ?? undefined} alt={dish.dish_name} className="mt-2 h-36 w-full rounded-xl object-cover md:h-40 md:w-64" /> : null}
+            </div>
+          ))}
+        </div>
+      ),
     },
     {
       id: "service",

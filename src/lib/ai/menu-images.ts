@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getOpenAiClient } from "@/lib/ai/openai";
+import { generatePlatingGuidanceForMenuOption, getOpenAiClient } from "@/lib/ai/openai";
 import type { Database } from "@/lib/supabase/database.types";
 
 const MENU_IMAGE_BUCKET = process.env.SUPABASE_MENU_IMAGE_BUCKET ?? "menu-assets";
@@ -146,6 +146,46 @@ async function generateAndStoreDishImage(params: {
   }
 }
 
+
+async function enrichDishPlatingGuidance(params: {
+  supabase: AdminClient;
+  option: MenuOptionImageRow;
+}) {
+  const { supabase, option } = params;
+
+  const guidance = await generatePlatingGuidanceForMenuOption({
+    id: option.id,
+    title: option.title ?? option.michelin_name,
+    concept: option.concept_summary ?? option.concept ?? "",
+    dishes: (option.menu_dishes ?? []).map((dish) => ({
+      course: dish.course_label ?? `Course ${dish.course_no}`,
+      name: dish.dish_name,
+      description: dish.description,
+      platingNotes: dish.plating_notes ?? "",
+      decorationNotes: dish.decoration_notes ?? undefined,
+      imagePrompt: dish.image_prompt ?? "",
+      imagePath: dish.image_path,
+    })),
+  });
+
+  const byName = new Map(guidance.dishes.map((dish) => [dish.dish_name.toLowerCase().trim(), dish]));
+
+  for (const dish of option.menu_dishes ?? []) {
+    const generated = byName.get(dish.dish_name.toLowerCase().trim());
+    if (!generated) continue;
+
+    await supabase.from("menu_dishes").update({
+      plating_notes: generated.plating_notes,
+      decoration_notes: generated.decoration_notes,
+      image_prompt: generated.image_prompt,
+    }).eq("id", dish.id);
+
+    dish.plating_notes = generated.plating_notes;
+    dish.decoration_notes = generated.decoration_notes;
+    dish.image_prompt = generated.image_prompt;
+  }
+}
+
 async function generateAndStoreHeroImage(params: {
   supabase: AdminClient;
   ownerId: string;
@@ -217,6 +257,17 @@ export async function enrichMenuImages(params: {
   }
 
   for (const option of ordered) {
+    try {
+      await enrichDishPlatingGuidance({ supabase, option });
+    } catch (error) {
+      console.error("[menu-images] plating guidance generation failed", {
+        menuId,
+        optionId: option.id,
+        optionTitle: option.title ?? option.michelin_name,
+        error,
+      });
+    }
+
     try {
       if (!option.hero_image_path) {
         await generateAndStoreHeroImage({ supabase, ownerId, menuId, option });

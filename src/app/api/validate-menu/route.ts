@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       {
         menu_id: menu.id,
         generated_by: "ai",
+        estimated_total_eur: null,
       },
       { onConflict: "menu_id" },
     )

@@ -35,6 +35,8 @@ export type ShoppingItemInsert = {
   unit: string | null;
   note: string | null;
   purchased: boolean;
+  estimated_unit_price_eur?: number | null;
+  estimated_total_price_eur?: number | null;
   sort_order: number;
 };
 
@@ -47,6 +49,8 @@ export function mapShoppingItemsToInsert(shoppingListId: string, items: z.infer<
     unit: item.unit ?? null,
     note: item.note ?? null,
     purchased: false,
+    estimated_unit_price_eur: null,
+    estimated_total_price_eur: null,
     sort_order: index + 1,
   }));
 }

@@ -7,6 +7,7 @@ import { ShoppingListButton } from "@/components/modules/shopping-list-button";
 import { resolveMenuDisplayTitle, resolveOptionDisplayTitle } from "@/lib/menu-display";
 import { resolveStorageImageUrl } from "@/lib/menu-images";
 import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
+import { FavoriteMenuButton } from "@/components/modules/favorite-menu-button";
 
 export default async function ApprovedMenuDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -30,7 +31,7 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
   if (!user?.id || menu.owner_id !== user.id) return notFound();
   if (!menu.approved_option_id) return notFound();
 
-  const [{ data: approvedOption }, { data: dishes }, { data: cookPlan }, { data: shoppingList }] = await Promise.all([
+  const [{ data: approvedOption }, { data: dishes }, { data: cookPlan }, { data: shoppingList }, { data: favorite }] = await Promise.all([
     supabase
       .from("menu_options")
       .select("id, title, michelin_name, concept_summary, concept, chef_notes, beverage_pairing, hero_image_path")
@@ -47,6 +48,7 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
       .eq("menu_id", menu.id)
       .maybeSingle(),
     supabase.from("shopping_lists").select("id").eq("menu_id", menu.id).maybeSingle(),
+    supabase.from("menu_favorites").select("id").eq("menu_id", menu.id).eq("owner_id", user.id).maybeSingle(),
   ]);
 
   const { data: shoppingItems } = shoppingList
@@ -97,7 +99,10 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
       <Card className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-serif text-2xl">{t("approval.detail.dishes", "Dishes")}</h2>
-          <ShoppingListButton menuId={menu.id} />
+          <div className="flex items-center gap-2">
+            <FavoriteMenuButton menuId={menu.id} initialFavorited={Boolean(favorite)} />
+            <ShoppingListButton menuId={menu.id} />
+          </div>
         </div>
         {(dishes ?? []).length ? (
           <div className="space-y-3">

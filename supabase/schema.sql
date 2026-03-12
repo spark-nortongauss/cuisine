@@ -68,6 +68,7 @@ create table if not exists public.shopping_lists (
   id uuid primary key default gen_random_uuid(),
   menu_id uuid not null unique references public.menus(id) on delete cascade,
   generated_by text not null default 'ai',
+  estimated_total_eur numeric,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -81,6 +82,8 @@ create table if not exists public.shopping_items (
   unit text,
   note text,
   purchased boolean not null default false,
+  estimated_unit_price_eur numeric,
+  estimated_total_price_eur numeric,
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
