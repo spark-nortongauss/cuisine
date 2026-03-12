@@ -36,9 +36,15 @@ export function FavoriteMenuButton({ menuId, initialFavorited }: { menuId: strin
 
   return (
     <div className="space-y-1">
-      <Button onClick={favoriteMenu} disabled={isLoading || isFavorited} variant={isFavorited ? "subtle" : "default"}>
+      <Button
+        onClick={favoriteMenu}
+        disabled={isLoading || isFavorited}
+        variant={isFavorited ? "subtle" : "default"}
+        size="icon"
+        aria-label={isFavorited ? t("favorites.favorited", "Favorited") : t("favorites.favorite", "Favorite")}
+        title={isFavorited ? t("favorites.favorited", "Favorited") : t("favorites.favorite", "Favorite")}
+      >
         {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Heart size={16} />}
-        {isFavorited ? t("favorites.favorited", "Favorited") : t("favorites.favorite", "Favorite")}
       </Button>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

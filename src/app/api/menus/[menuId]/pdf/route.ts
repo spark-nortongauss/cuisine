@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ men
 
   const { data: menu } = await supabase
     .from("menus")
-    .select("id, owner_id, title, meal_type, approved_option_id, menu_options(id, title, michelin_name)")
+    .select("id, owner_id, title, meal_type, serve_at, approved_option_id, menu_options(id, title, michelin_name)")
     .eq("id", menuId)
     .maybeSingle();
 
@@ -31,7 +31,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ men
 
   const { data: dishes } = await supabase
     .from("menu_dishes")
-    .select("dish_name, description, plating_notes, image_path")
+    .select("dish_name, description, plating_notes, decoration_notes, image_path")
     .eq("menu_option_id", menu.approved_option_id)
     .order("course_no", { ascending: true });
 
@@ -45,11 +45,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ men
   const displayTitle = resolveMenuDisplayTitle(menu, options.find((option) => option.id === menu.approved_option_id) ?? null);
 
   const dishPayload = await Promise.all(
-    ((dishes ?? []) as Array<Pick<Database["public"]["Tables"]["menu_dishes"]["Row"], "dish_name" | "description" | "plating_notes" | "image_path">>).map(async (dish) => ({
+    ((dishes ?? []) as Array<Pick<Database["public"]["Tables"]["menu_dishes"]["Row"], "dish_name" | "description" | "plating_notes" | "decoration_notes" | "image_path">>).map(async (dish) => ({
       dishName: dish.dish_name,
-      description: dish.description,
+      description: dish.description ?? "",
       ingredients: ingredientsText,
       platingNotes: dish.plating_notes,
+      decorationNotes: dish.decoration_notes,
       imageUrl: await resolveStorageImageUrl({ supabase, path: dish.image_path }),
     })),
   );
@@ -57,6 +58,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ men
   const pdf = buildMichelinMenuPdf({
     title: displayTitle,
     mealType: menu.meal_type,
+    serviceDateTime: menu.serve_at ? new Date(menu.serve_at).toLocaleString() : null,
     courses: dishPayload.length,
     dishes: dishPayload,
   });
