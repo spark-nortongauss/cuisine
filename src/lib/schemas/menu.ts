@@ -17,7 +17,7 @@ const inviteePreferenceSchema = z.object({
 });
 
 export const generateMenuSchema = z.object({
-  courseCount: z.union([z.literal(3), z.literal(4), z.literal(5), z.literal(6)]),
+  courseCount: z.union([z.literal(1), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]),
   mealType: z.enum(["breakfast", "brunch", "lunch", "mid-afternoon", "dinner"]),
   restrictions: z.array(z.string()).default([]),
   notes: z.string().max(300).optional(),

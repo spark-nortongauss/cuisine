@@ -69,8 +69,9 @@ export async function generateMichelinMenus(input: GenerateMenuInput): Promise<M
         .map((invitee) => `${invitee.label}${invitee.name ? ` (${invitee.name})` : ""}: ${invitee.restrictions.join(", ") || "none"}`)
         .join("; ")
     : "none";
+  const courseLabel = input.courseCount === 1 ? "course" : "courses";
 
-  const prompt = `Create exactly 3 premium menu options for a ${input.mealType} with ${input.courseCount} courses.
+  const prompt = `Create exactly 3 premium menu options for a ${input.mealType} with ${input.courseCount} ${courseLabel}.
 Restrictions (aggregate): ${input.restrictions.join(", ") || "none"}.
 Restrictions per individual: ${inviteeContext}.
 Service date/time: ${input.serveAt}.

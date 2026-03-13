@@ -7,7 +7,7 @@ export interface InviteePreference {
 }
 
 export interface GenerateMenuInput {
-  courseCount: 3 | 4 | 5 | 6;
+  courseCount: 1 | 3 | 4 | 5 | 6;
   mealType: MealType;
   restrictions: string[];
   notes?: string;

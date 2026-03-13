@@ -1,19 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import { useEffect, useMemo, useState } from "react";
 import { Download, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { downloadAsset, shareAsset } from "@/lib/browser-media";
 
-export function DownloadMenuPdfButton({ menuId }: { menuId: string }) {
+export function DownloadMenuPdfButton({ menuId, showLabel = false }: { menuId: string; showLabel?: boolean }) {
   const [open, setOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
 
   const filename = useMemo(() => `menu-${menuId}.pdf`, [menuId]);
 
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
+
   async function openPreview() {
     setLoading(true);
+    setShareMessage(null);
     try {
       const response = await fetch(`/api/menus/${menuId}/pdf`);
       if (!response.ok) return;
@@ -31,11 +40,9 @@ export function DownloadMenuPdfButton({ menuId }: { menuId: string }) {
 
   async function sharePdf() {
     if (!pdfUrl) return;
-    const blob = await fetch(pdfUrl).then((res) => res.blob());
-    const file = new File([blob], filename, { type: "application/pdf" });
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], title: "Michelin Menu PDF" });
-    }
+    const result = await shareAsset({ url: pdfUrl, title: "Michelin Menu PDF", filename });
+    if (result === "copied") setShareMessage("PDF link copied to clipboard.");
+    if (result === "unsupported") setShareMessage("Sharing is not available on this device.");
   }
 
   return (
@@ -43,45 +50,52 @@ export function DownloadMenuPdfButton({ menuId }: { menuId: string }) {
       <Button
         type="button"
         variant="outline"
-        size="icon"
+        size={showLabel ? "sm" : "icon"}
+        className={showLabel ? "w-full sm:w-auto" : undefined}
         onClick={openPreview}
         disabled={loading}
         aria-label={loading ? "Preparing PDF..." : "Download PDF Menu"}
         title={loading ? "Preparing PDF..." : "Download PDF Menu"}
       >
         <Download size={16} />
+        {showLabel ? <span>PDF Brief</span> : null}
       </Button>
-      <Dialog.Root open={open} onOpenChange={setOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
-          <Dialog.Content className="fixed inset-x-4 top-8 z-50 mx-auto max-w-5xl rounded-2xl border border-border bg-background p-4 shadow-2xl">
-            <div className="mb-3 flex items-center justify-between">
-              <Dialog.Title className="font-serif text-xl">Michelin-style Menu Preview</Dialog.Title>
-              <Dialog.Close asChild>
-                <button type="button" aria-label="Close"><X size={16} /></button>
-              </Dialog.Close>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="h-[min(92vh,56rem)] w-[min(98vw,72rem)] max-w-none overflow-hidden p-0" hideClose>
+          <div className="flex h-full flex-col">
+            <DialogHeader className="border-b border-white/10 px-5 pb-4 pt-5 md:px-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <DialogTitle>Michelin-style menu brief</DialogTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">Preview the exported PDF, then download or share it from the same surface.</p>
+                </div>
+                <Button variant="ghost" size="icon-sm" onClick={() => setOpen(false)} aria-label="Close PDF preview">
+                  <X size={15} />
+                </Button>
+              </div>
+            </DialogHeader>
+
+            <div className="flex flex-1 flex-col gap-4 overflow-hidden px-4 pb-4 pt-4 md:px-6">
+              {pdfUrl ? (
+                <iframe src={pdfUrl} className="h-full min-h-[60vh] w-full rounded-[1.5rem] border border-white/10 bg-white" title="Menu PDF preview" />
+              ) : null}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {shareMessage ? <p className="text-xs text-muted-foreground">{shareMessage}</p> : <span />}
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={sharePdf} disabled={!pdfUrl}>
+                    <Share2 size={14} />
+                    Share
+                  </Button>
+                  <Button type="button" onClick={() => (pdfUrl ? downloadAsset({ url: pdfUrl, filename }) : undefined)} disabled={!pdfUrl}>
+                    <Download size={14} />
+                    Download
+                  </Button>
+                </div>
+              </div>
             </div>
-            {pdfUrl ? <iframe src={pdfUrl} className="h-[70vh] w-full rounded-xl border" title="Menu PDF preview" /> : null}
-            <div className="mt-3 flex gap-2">
-              <Button type="button" onClick={sharePdf} disabled={!pdfUrl}><Share2 size={14} />Share</Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!pdfUrl}
-                onClick={() => {
-                  if (!pdfUrl) return;
-                  const link = document.createElement("a");
-                  link.href = pdfUrl;
-                  link.download = filename;
-                  link.click();
-                }}
-              >
-                <Download size={14} />Download
-              </Button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

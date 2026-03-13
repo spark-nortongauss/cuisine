@@ -3,51 +3,68 @@
 @tailwind utilities;
 
 :root {
-  --background: 221 65% 19%; /* #112250 */
-  --foreground: 33 38% 94%; /* #F5F0E9 */
-  --card: 33 38% 94%; /* #F5F0E9 */
-  --card-foreground: 221 65% 19%; /* #112250 */
-  --primary: 221 65% 19%; /* #112250 */
-  --primary-foreground: 33 38% 94%; /* #F5F0E9 */
-  --muted: 25 24% 81%; /* #D9CBC2 */
-  --muted-foreground: 218 30% 32%; /* muted sapphire text */
-  --accent: 40 57% 72%; /* #E0C58F */
-  --accent-foreground: 221 65% 19%; /* #112250 */
-  --border: 25 24% 81%; /* #D9CBC2 */
-  --destructive: 0 51% 46%; /* #B33A3A */
-  --destructive-foreground: 33 38% 94%;
-  --success: 99 28% 33%; /* #4C6B3C */
-  --success-foreground: 33 38% 94%;
-  --warning: 40 64% 47%; /* #C6922C */
-  --info: 214 30% 34%; /* sapphire-muted */
-  --wine: 214 30% 34%; /* compatibility alias */
+  --background: 223 34% 8%;
+  --foreground: 39 35% 95%;
+  --card: 222 29% 12%;
+  --card-foreground: 39 28% 94%;
+  --primary: 41 71% 68%;
+  --primary-foreground: 223 38% 10%;
+  --muted: 223 20% 18%;
+  --muted-foreground: 220 15% 76%;
+  --accent: 205 45% 59%;
+  --accent-foreground: 223 40% 10%;
+  --border: 223 16% 25%;
+  --destructive: 4 73% 63%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 145 47% 58%;
+  --success-foreground: 223 40% 10%;
+  --warning: 39 92% 64%;
+  --info: 205 76% 64%;
+  --wine: 344 49% 61%;
 
-  --fg-on-dark: 33 38% 94%;
-  --fg-on-light: 221 65% 19%;
-  --fg-muted-light: 218 30% 32%;
-  --fg-muted-dark: 33 24% 82%;
-  --button-primary-bg: 40 57% 72%;
-  --button-primary-fg: 221 65% 19%;
-  --button-secondary-bg: 33 38% 94%;
-  --button-secondary-fg: 221 65% 19%;
-  --input-bg: 33 38% 94%;
-  --input-border: 25 24% 72%;
-  --placeholder: 218 22% 44%;
-  --nav-active: 40 57% 72%;
-  --nav-inactive: 218 30% 32%;
+  --fg-on-dark: 39 35% 95%;
+  --fg-on-light: 223 38% 10%;
+  --fg-muted-light: 220 15% 32%;
+  --fg-muted-dark: 220 15% 76%;
+  --button-primary-bg: 41 71% 68%;
+  --button-primary-fg: 223 38% 10%;
+  --button-secondary-bg: 222 29% 16%;
+  --button-secondary-fg: 39 35% 95%;
+  --input-bg: 222 27% 14%;
+  --input-border: 223 15% 29%;
+  --placeholder: 220 10% 60%;
+  --nav-active: 41 71% 68%;
+  --nav-inactive: 220 13% 68%;
 }
 
 * {
   @apply border-border;
 }
 
+html {
+  color-scheme: dark;
+}
+
 body {
   @apply bg-background text-foreground font-sans antialiased;
-  background-image: radial-gradient(circle at 12% -10%, hsl(var(--accent) / 0.2), transparent 34%),
-    radial-gradient(circle at 88% -12%, hsl(216 30% 35% / 0.22), transparent 36%),
-    linear-gradient(135deg, #112250 0%, #3c5070 100%);
+  background-image: radial-gradient(circle at 14% -10%, hsl(var(--primary) / 0.16), transparent 28%),
+    radial-gradient(circle at 92% 8%, hsl(var(--accent) / 0.14), transparent 24%),
+    linear-gradient(160deg, #090d17 0%, #0d1321 38%, #131b2c 100%);
   min-height: 100vh;
   letter-spacing: 0.005em;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(232, 194, 117, 0.12), transparent 20%),
+    radial-gradient(circle at 78% 12%, rgba(96, 165, 250, 0.1), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 22%);
+  opacity: 0.9;
+  z-index: -1;
 }
 
 h1,
@@ -57,21 +74,43 @@ h3,
   @apply font-serif tracking-[0.01em] text-balance;
 }
 
+::selection {
+  background: hsl(var(--primary) / 0.28);
+  color: hsl(var(--foreground));
+}
+
+button,
+[role="button"] {
+  touch-action: manipulation;
+}
+
 @layer components {
   .premium-panel {
-    @apply rounded-3xl border border-border/80 bg-premium-surface text-card-foreground shadow-soft;
+    @apply rounded-3xl border border-white/10 bg-premium-panel text-card-foreground shadow-soft backdrop-blur-xl;
   }
 
   .premium-table {
-    @apply w-full min-w-[760px] border-separate border-spacing-y-2 text-sm;
+    @apply w-full min-w-[760px] border-separate border-spacing-y-3 text-sm text-card-foreground;
   }
 
   .premium-table thead tr {
-    @apply text-left text-[11px] uppercase tracking-[0.2em] text-muted-foreground;
+    @apply text-left text-[11px] uppercase tracking-[0.22em] text-muted-foreground;
   }
 
   .premium-row {
-    @apply rounded-2xl border border-border/70 bg-card/75 transition-colors hover:border-primary/40 hover:bg-card;
+    @apply rounded-3xl border border-white/10 bg-white/[0.035] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white/[0.055] hover:shadow-soft;
+  }
+
+  .section-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground;
+  }
+
+  .glass-surface {
+    @apply border border-white/10 bg-white/[0.04] backdrop-blur-xl;
+  }
+
+  .field-surface {
+    @apply border border-white/10 bg-white/[0.03] shadow-soft backdrop-blur-xl;
   }
 }
 
@@ -80,10 +119,10 @@ h3,
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(rgba(245, 240, 233, 0.09) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(245, 240, 233, 0.07) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 120px 120px;
-  opacity: 0.26;
+  opacity: 0.2;
   mask-image: radial-gradient(circle at 50% 30%, black, transparent 84%);
 }
 
@@ -96,8 +135,8 @@ h3,
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.06;
-  background-image: radial-gradient(circle, rgba(255, 250, 240, 0.3) 0.7px, transparent 0.8px);
+  opacity: 0.04;
+  background-image: radial-gradient(circle, rgba(255, 250, 240, 0.28) 0.7px, transparent 0.8px);
   background-size: 3px 3px;
 }
 

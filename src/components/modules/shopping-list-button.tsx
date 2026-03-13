@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, ShoppingBasket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function ShoppingListButton({ menuId }: { menuId: string }) {
+export function ShoppingListButton({ menuId, showLabel = false }: { menuId: string; showLabel?: boolean }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,11 +37,13 @@ export function ShoppingListButton({ menuId }: { menuId: string }) {
       <Button
         onClick={ensureShoppingList}
         disabled={isLoading}
-        size="icon"
+        size={showLabel ? "sm" : "icon"}
+        className={showLabel ? "w-full sm:w-auto" : undefined}
         aria-label={isLoading ? "Preparing shopping list..." : "Shopping List"}
         title={isLoading ? "Preparing shopping list..." : "Shopping List"}
       >
         {isLoading ? <Loader2 size={16} className="animate-spin" /> : <ShoppingBasket size={16} />}
+        {showLabel ? <span>Shopping List</span> : null}
       </Button>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

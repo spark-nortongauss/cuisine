@@ -83,7 +83,64 @@ export function ApprovedMenusTable({ rows }: Props) {
         </Button>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="space-y-3 md:hidden">
+        {rows.map((row, index) => (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: index * 0.03 }}
+            key={row.id}
+            onClick={() => router.push(`/approval/menus/${row.id}`)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                router.push(`/approval/menus/${row.id}`);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            className="w-full rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-4 text-left transition hover:bg-white/[0.06]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-2">
+                <p className="font-serif text-2xl text-card-foreground">{row.title}</p>
+                <p className="text-sm text-muted-foreground">{row.approvedOptionTitle}</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(row.id)}
+                onChange={() => toggleRow(row.id)}
+                onClick={(event) => event.stopPropagation()}
+                aria-label={t("approval.selectMenu", `Select ${row.title}`)}
+              />
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
+              <Badge variant="default">{row.mealType}</Badge>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t("common.table.service")}</p>
+                <p className="mt-1 text-sm text-card-foreground">
+                  {row.serveAt ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(row.serveAt)) : t("common.noDate")}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t("approval.invitees", "Invitees")}</p>
+                <p className="mt-1 text-sm text-card-foreground">{row.inviteeCount ?? "-"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t("common.table.updated")}</p>
+                <p className="mt-1 text-sm text-card-foreground">{new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(row.updatedAt))}</p>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="premium-table">
           <thead>
             <tr>

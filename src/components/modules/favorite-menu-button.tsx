@@ -5,7 +5,15 @@ import { Heart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/i18n/i18n-provider";
 
-export function FavoriteMenuButton({ menuId, initialFavorited }: { menuId: string; initialFavorited: boolean }) {
+export function FavoriteMenuButton({
+  menuId,
+  initialFavorited,
+  showLabel = false,
+}: {
+  menuId: string;
+  initialFavorited: boolean;
+  showLabel?: boolean;
+}) {
   const { t } = useI18n();
   const [isLoading, setIsLoading] = useState(false);
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
@@ -40,11 +48,13 @@ export function FavoriteMenuButton({ menuId, initialFavorited }: { menuId: strin
         onClick={favoriteMenu}
         disabled={isLoading || isFavorited}
         variant={isFavorited ? "subtle" : "default"}
-        size="icon"
+        size={showLabel ? "sm" : "icon"}
+        className={showLabel ? "w-full sm:w-auto" : undefined}
         aria-label={isFavorited ? t("favorites.favorited", "Favorited") : t("favorites.favorite", "Favorite")}
         title={isFavorited ? t("favorites.favorited", "Favorited") : t("favorites.favorite", "Favorite")}
       >
         {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Heart size={16} />}
+        {showLabel ? <span>{isFavorited ? t("favorites.favorited", "Favorited") : t("favorites.favorite", "Favorite")}</span> : null}
       </Button>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

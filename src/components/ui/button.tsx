@@ -4,22 +4,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-2xl text-sm font-semibold tracking-[0.015em] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+  "inline-flex min-w-0 items-center justify-center gap-2 rounded-2xl border border-transparent text-sm font-semibold tracking-[0.015em] transition-[transform,box-shadow,background-color,border-color,color,opacity] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/65 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:translate-y-px",
   {
     variants: {
       variant: {
         default:
-          "bg-accent-luxury text-accent-foreground shadow-soft hover:-translate-y-0.5 hover:brightness-105 hover:shadow-glow",
-        outline:
-          "border border-border bg-card/95 text-card-foreground shadow-sm backdrop-blur hover:border-primary/45 hover:bg-muted/70",
-        ghost: "text-card-foreground hover:bg-muted/70",
-        subtle: "bg-muted/60 text-card-foreground hover:bg-muted",
+          "bg-accent-luxury text-primary-foreground shadow-soft hover:-translate-y-0.5 hover:brightness-105 hover:shadow-glow",
+        outline: "border-white/10 bg-white/[0.04] text-card-foreground shadow-soft backdrop-blur-xl hover:border-primary/35 hover:bg-white/[0.08]",
+        ghost: "text-muted-foreground hover:bg-white/[0.06] hover:text-card-foreground",
+        subtle: "border-white/8 bg-muted/65 text-card-foreground hover:bg-muted/85",
+        secondary: "border-accent/25 bg-accent/15 text-card-foreground hover:bg-accent/24",
       },
       size: {
         default: "h-11 px-5 py-2",
         sm: "h-9 px-4 text-xs",
         lg: "h-12 px-6 text-base",
-        icon: "h-10 w-10",
+        icon: "h-11 w-11",
+        "icon-sm": "h-9 w-9",
+        "icon-lg": "h-12 w-12",
       },
     },
     defaultVariants: {
