@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowRight, CheckCircle2, Clock3, ImageIcon, ListChecks, ShoppingBasket, Sparkles, Timer, Vote } from "lucide-react";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Card } from "@/components/ui/card";
@@ -49,6 +50,10 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
 
   const supabase = createSupabaseAdminClient();
   const { data: menuRows } = await supabase
