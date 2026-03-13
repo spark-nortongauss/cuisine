@@ -8,6 +8,8 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/sup
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import type { Database } from "@/lib/supabase/database.types";
 import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
+import { localizeMealType } from "@/lib/i18n/labels";
+import { isShoppingItemComplete } from "@/lib/shopping-status";
 
 type ShoppingMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
@@ -18,7 +20,7 @@ type ShoppingListView = {
   mealType: string;
   serveAt: string | null;
   itemCount: number;
-  purchasedCount: number;
+  completedCount: number;
   updatedAt: string;
 };
 
@@ -34,13 +36,13 @@ export default async function ShoppingIndexPage() {
   const supabase = createSupabaseAdminClient();
   const { data: rows } = await supabase
     .from("shopping_lists")
-    .select("id, menu_id, updated_at, menus!inner(owner_id, title, meal_type, serve_at, approved_option_id, menu_options(id, title, michelin_name)), shopping_items(id, purchased)")
+    .select("id, menu_id, updated_at, menus!inner(owner_id, title, meal_type, serve_at, approved_option_id, menu_options(id, title, michelin_name)), shopping_items(id, purchased, status)")
     .eq("menus.owner_id", user?.id ?? "")
     .order("updated_at", { ascending: false });
 
   const lists: ShoppingListView[] = (rows ?? []).map((row) => {
     const items = row.shopping_items ?? [];
-    const purchasedCount = items.filter((item) => item.purchased).length;
+    const completedCount = items.filter((item) => isShoppingItemComplete(item.status, item.purchased)).length;
     const menu = Array.isArray(row.menus) ? row.menus[0] : row.menus;
 
     const menuOptions: ShoppingMenuOptionRow[] = (menu?.menu_options ?? []) as ShoppingMenuOptionRow[];
@@ -49,11 +51,11 @@ export default async function ShoppingIndexPage() {
     return {
       id: row.id,
       menuId: row.menu_id,
-      menuTitle: resolveMenuDisplayTitle(menu, approvedOption),
-      mealType: menu?.meal_type ?? t("common.mealFallback", "Service"),
+      menuTitle: resolveMenuDisplayTitle(menu, approvedOption, t("common.untitledMenu", "Untitled menu")),
+      mealType: localizeMealType(menu?.meal_type, t),
       serveAt: menu?.serve_at ?? null,
       itemCount: items.length,
-      purchasedCount,
+      completedCount,
       updatedAt: row.updated_at,
     };
   });
@@ -81,7 +83,7 @@ export default async function ShoppingIndexPage() {
             </thead>
             <tbody>
               {lists.map((list) => {
-                const complete = list.itemCount > 0 && list.purchasedCount === list.itemCount;
+                const complete = list.itemCount > 0 && list.completedCount === list.itemCount;
                 return (
                   <tr key={list.id} className="premium-row">
                     <td className="px-3 py-3 font-serif text-base text-primary underline-offset-4 hover:underline">
@@ -93,7 +95,7 @@ export default async function ShoppingIndexPage() {
                     <td className="px-3 py-3">
                       <Badge variant={complete ? "success" : "accent"} className="gap-1.5">
                         {complete ? <CircleCheck size={12} /> : <ShoppingBasket size={12} />}
-                        {list.purchasedCount}/{list.itemCount}
+                        {list.completedCount}/{list.itemCount}
                       </Badge>
                     </td>
                     <td className="px-3 py-3">{formatWithLocale(locale, new Date(list.updatedAt), { dateStyle: "medium" })}</td>

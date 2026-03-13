@@ -8,11 +8,15 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/sup
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import type { Database } from "@/lib/supabase/database.types";
 import { CookAgainButton } from "@/components/modules/cook-again-button";
+import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
+import { localizeMealType } from "@/lib/i18n/labels";
 
 type FavoriteMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
 export default async function FavoriteDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
 
   const supabaseServer = await createSupabaseServerClient();
   const {
@@ -32,23 +36,23 @@ export default async function FavoriteDetailPage({ params }: { params: Promise<{
 
   const menuOptions: FavoriteMenuOptionRow[] = (menu.menu_options ?? []) as FavoriteMenuOptionRow[];
   const approvedOption: FavoriteMenuOptionRow | null = menuOptions.find((option: FavoriteMenuOptionRow) => option.id === menu.approved_option_id) ?? null;
-  const displayTitle = resolveMenuDisplayTitle(menu, approvedOption);
+  const displayTitle = resolveMenuDisplayTitle(menu, approvedOption, t("common.untitledMenu", "Untitled menu"));
 
   return (
     <PageTransition>
       <PageHero
-        eyebrow="Favorite Detail"
+        eyebrow={t("favorites.detail.eyebrow", "Favorite Detail")}
         title={displayTitle}
-        description="A celebrated signature menu with strong post-dinner sentiment and repeat-service potential."
+        description={t("favorites.detail.description", "A celebrated signature menu with strong post-service sentiment and repeat-service potential.")}
       />
       <div className="grid gap-4 md:grid-cols-3">
-        <Card><p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><Users size={14} />Guests</p><p className="mt-2">{favorite.people_count ?? "-"}</p></Card>
-        <Card><p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><ShoppingBasket size={14} />Type</p><p className="mt-2">{menu.meal_type ?? "-"}</p></Card>
-        <Card><p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><Calendar size={14} />Served on</p><p className="mt-2">{favorite.served_on ?? "-"}</p></Card>
+        <Card><p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><Users size={14} />{t("favorites.detail.guests", "Guests")}</p><p className="mt-2">{favorite.people_count ?? "-"}</p></Card>
+        <Card><p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><ShoppingBasket size={14} />{t("favorites.detail.type", "Type")}</p><p className="mt-2">{localizeMealType(menu.meal_type, t)}</p></Card>
+        <Card><p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground"><Calendar size={14} />{t("favorites.detail.servedOn", "Served on")}</p><p className="mt-2">{favorite.served_on ? formatWithLocale(locale, new Date(favorite.served_on), { dateStyle: "medium" }) : "-"}</p></Card>
       </div>
       <Card variant="feature" className="space-y-2">
-        <Badge variant="accent" className="w-fit">Saved because post-meal rating exceeded threshold</Badge>
-        <p className="text-sm">Favorite rating: {favorite.rating_percent}%</p>
+        <Badge variant="accent" className="w-fit">{t("favorites.detail.savedReason", "Saved because post-meal rating exceeded threshold")}</Badge>
+        <p className="text-sm">{t("favorites.detail.rating", "Favorite rating")}: {favorite.rating_percent}%</p>
         <CookAgainButton menuId={menuId} />
       </Card>
     </PageTransition>

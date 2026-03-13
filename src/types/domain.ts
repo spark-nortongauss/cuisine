@@ -38,6 +38,12 @@ export interface MenuOption {
   dishes: Dish[];
 }
 
+export interface CookStepExecutionDetails {
+  techniques?: string[];
+  utensils?: string[];
+  preparationCues?: string[];
+}
+
 export interface ApprovalVoteInput {
   optionId: string;
   note?: string;

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
+import { useI18n } from "@/components/i18n/i18n-provider";
 
 type MenuOptionCardProps = {
   option: MenuOption;
@@ -23,7 +24,15 @@ function resolveClientImageUrl(url?: string | null, path?: string | null) {
   return null;
 }
 
-function DishImage({ imagePath, imageUrl }: { imagePath?: string | null; imageUrl?: string | null }) {
+function DishImage({
+  imagePath,
+  imageUrl,
+  t,
+}: {
+  imagePath?: string | null;
+  imageUrl?: string | null;
+  t: (key: string, fallback?: string) => string;
+}) {
   const resolvedImage = useMemo(() => resolveClientImageUrl(imageUrl, imagePath), [imagePath, imageUrl]);
   const [hasError, setHasError] = useState(false);
 
@@ -31,7 +40,7 @@ function DishImage({ imagePath, imageUrl }: { imagePath?: string | null; imageUr
     return (
       <img
         src={resolvedImage}
-        alt="Dish visual"
+        alt={t("generate.option.dishVisual", "Dish visual")}
         className="h-32 w-full rounded-xl object-cover md:h-28 md:w-44"
         loading="lazy"
         onError={() => setHasError(true)}
@@ -42,12 +51,13 @@ function DishImage({ imagePath, imageUrl }: { imagePath?: string | null; imageUr
   return (
     <div className="flex h-32 w-full items-center justify-center rounded-xl border border-border/70 bg-gradient-to-br from-primary/10 via-card to-accent/15 text-xs text-muted-foreground md:h-28 md:w-44">
       <ImageIcon size={16} className="mr-2" />
-      Image pending
+      {t("generate.option.imagePending", "Image pending")}
     </div>
   );
 }
 
 export function MenuOptionCard({ option, onSelect, isSelected = false, selecting = false }: MenuOptionCardProps) {
+  const { t } = useI18n();
   const heroImageSrc = useMemo(() => resolveClientImageUrl(option.heroImageUrl, option.heroImagePath), [option.heroImagePath, option.heroImageUrl]);
   const [heroHasError, setHeroHasError] = useState(false);
 
@@ -57,23 +67,25 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
         {heroImageSrc && !heroHasError ? (
           <img
             src={heroImageSrc}
-            alt={`${option.title} hero`}
+            alt={`${option.title} ${t("generate.option.hero", "hero")}`}
             className="h-44 w-full rounded-2xl object-cover md:h-52"
             loading="lazy"
             onError={() => setHeroHasError(true)}
           />
         ) : (
           <div className="flex h-44 w-full items-center justify-center rounded-2xl border border-border/60 bg-gradient-to-r from-primary/10 via-card/90 to-accent/20 text-sm text-muted-foreground md:h-52">
-            Premium hero image pending
+            {t("generate.option.heroPending", "Premium hero image pending")}
           </div>
         )}
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-primary/80">Curated option</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-primary/80">{t("generate.option.curated", "Curated option")}</p>
             <h3 className="font-serif text-3xl md:text-4xl">{option.title}</h3>
           </div>
-          <Badge variant={isSelected ? "success" : "accent"}>{isSelected ? "Selected" : "Michelin-inspired"}</Badge>
+          <Badge variant={isSelected ? "success" : "accent"}>
+            {isSelected ? t("generate.option.selected", "Selected") : t("generate.option.michelinInspired", "Michelin-inspired")}
+          </Badge>
         </div>
 
         <p className="text-sm text-muted-foreground md:text-base">{option.concept}</p>
@@ -92,13 +104,13 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
               </Accordion.Header>
               <Accordion.Content className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden px-4 pb-4">
                 <div className="space-y-3 border-t border-border/60 pt-3 text-sm">
-                  <DishImage imagePath={dish.imagePath} imageUrl={dish.imageUrl} />
+                  <DishImage imagePath={dish.imagePath} imageUrl={dish.imageUrl} t={t} />
                   <p className="text-muted-foreground">{dish.description}</p>
-                  <p className="flex items-start gap-2"><UtensilsCrossed size={14} className="mt-0.5 text-muted-foreground" />Plating: {dish.platingNotes}</p>
+                  <p className="flex items-start gap-2"><UtensilsCrossed size={14} className="mt-0.5 text-muted-foreground" />{t("approval.detail.plating", "Plating")}: {dish.platingNotes}</p>
                   {dish.beverageSuggestion ? (
                     <p className="flex items-center gap-2 text-muted-foreground"><Wine size={14} />{dish.beverageSuggestion}</p>
                   ) : null}
-                  {process.env.NODE_ENV === "development" ? <p className="text-xs italic text-muted-foreground">Image prompt: {dish.imagePrompt}</p> : null}
+                  {process.env.NODE_ENV === "development" ? <p className="text-xs italic text-muted-foreground">{t("generate.option.imagePrompt", "Image prompt")}: {dish.imagePrompt}</p> : null}
                 </div>
               </Accordion.Content>
             </Accordion.Item>
@@ -108,11 +120,11 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline">
             <Sparkles size={14} />
-            Regenerate
+            {t("generate.option.regenerate", "Regenerate")}
           </Button>
           <Button variant={isSelected ? "default" : "outline"} size="sm" onClick={onSelect} disabled={!onSelect || selecting || isSelected}>
             <CheckCircle2 size={14} />
-            {selecting ? "Selecting..." : isSelected ? "Selected" : "Select"}
+            {selecting ? t("generate.option.selecting", "Selecting...") : isSelected ? t("generate.option.selected", "Selected") : t("generate.option.select", "Select")}
           </Button>
         </div>
       </Card>

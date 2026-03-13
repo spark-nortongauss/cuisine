@@ -37,6 +37,7 @@ export type ShoppingItemInsert = {
   quantity: number | null;
   unit: string | null;
   note: string | null;
+  status: "purchased" | "already_have" | "not_purchased";
   purchased: boolean;
   estimated_unit_price_eur?: number | null;
   estimated_total_price_eur?: number | null;
@@ -51,6 +52,7 @@ export function mapShoppingItemsToInsert(shoppingListId: string, items: z.infer<
     quantity: item.quantity ?? null,
     unit: item.unit ?? null,
     note: item.note ?? null,
+    status: "not_purchased",
     purchased: false,
     estimated_unit_price_eur: null,
     estimated_total_price_eur: null,

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/components/i18n/i18n-provider";
+import { localizeMenuStatus } from "@/lib/i18n/labels";
 
 type ApprovedMenuRow = {
   id: string;
@@ -49,7 +50,7 @@ export function ApprovedMenusTable({ rows }: Props) {
 
   async function deleteSelected() {
     if (!selectedIds.length || isDeleting) return;
-    const confirmed = window.confirm(t("approval.deleteConfirm", `Delete ${selectedIds.length} approved menu${selectedIds.length > 1 ? "s" : ""}? This cannot be undone.`));
+    const confirmed = window.confirm(t("approval.deleteConfirm", "Delete selected approved menus? This cannot be undone."));
     if (!confirmed) return;
 
     setIsDeleting(true);
@@ -121,7 +122,7 @@ export function ApprovedMenusTable({ rows }: Props) {
                 <td className="px-3 py-3">{row.mealType}</td>
                 <td className="px-3 py-3">{row.serveAt ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(row.serveAt)) : t("common.noDate")}</td>
                 <td className="px-3 py-3">{row.inviteeCount ?? "-"}</td>
-                <td className="px-3 py-3 capitalize"><Badge variant={statusVariant(row.status)}>{row.status}</Badge></td>
+                <td className="px-3 py-3 capitalize"><Badge variant={statusVariant(row.status)}>{localizeMenuStatus(row.status, t)}</Badge></td>
                 <td className="px-3 py-3">{new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(row.updatedAt))}</td>
               </motion.tr>
             ))}

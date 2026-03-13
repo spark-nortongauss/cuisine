@@ -9,6 +9,7 @@ import { resolveStorageImageUrl } from "@/lib/menu-images";
 import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
 import { FavoriteMenuButton } from "@/components/modules/favorite-menu-button";
 import { DownloadMenuPdfButton } from "@/components/modules/download-menu-pdf-button";
+import { localizeMealType, localizeMenuStatus } from "@/lib/i18n/labels";
 
 export default async function ApprovedMenuDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -69,20 +70,20 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
     Promise.all((dishes ?? []).map((dish) => resolveStorageImageUrl({ supabase, path: dish.image_path }))),
   ]);
 
-  const displayTitle = resolveMenuDisplayTitle(menu, approvedOption);
+  const displayTitle = resolveMenuDisplayTitle(menu, approvedOption, t("common.untitledMenu", "Untitled menu"));
 
   return (
     <PageTransition>
       <PageHero
         eyebrow={t("approval.detail.eyebrow", "Approved Service")}
         title={displayTitle}
-        description={`${menu.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}${menu.meal_type ? ` · ${menu.meal_type}` : ""}`}
+        description={`${menu.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}${menu.meal_type ? ` · ${localizeMealType(menu.meal_type, t)}` : ""}`}
       />
 
       <div className="grid gap-3 md:grid-cols-2">
         <Card className="space-y-2">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("approval.detail.menuMetadata", "Menu metadata")}</p>
-          <p><strong>{t("approval.status", "Status")}:</strong> <span className="capitalize">{menu.status}</span></p>
+          <p><strong>{t("approval.status", "Status")}:</strong> <span className="capitalize">{localizeMenuStatus(menu.status, t)}</span></p>
           <p><strong>{t("approval.invitees", "Invitees")}:</strong> {menu.invitee_count ?? "-"}</p>
           <p><strong>{t("approval.detail.restrictions", "Restrictions")}:</strong> {menu.restrictions?.length ? menu.restrictions.join(", ") : t("approval.detail.none", "None")}</p>
           <p><strong>{t("approval.detail.chefNotes", "Chef notes")}:</strong> {menu.notes ?? t("approval.detail.noChefNotes", "No chef notes")}</p>

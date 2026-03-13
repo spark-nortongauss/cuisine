@@ -506,6 +506,7 @@ export type Database = {
           section: string;
           shopping_list_id: string;
           sort_order: number;
+          status: "already_have" | "not_purchased" | "purchased";
           unit: string | null;
           updated_at: string;
         };
@@ -521,6 +522,7 @@ export type Database = {
           section: string;
           shopping_list_id: string;
           sort_order?: number;
+          status?: "already_have" | "not_purchased" | "purchased";
           unit?: string | null;
           updated_at?: string;
         };
@@ -536,6 +538,7 @@ export type Database = {
           section?: string;
           shopping_list_id?: string;
           sort_order?: number;
+          status?: "already_have" | "not_purchased" | "purchased";
           unit?: string | null;
           updated_at?: string;
         };

@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n/i18n-provider";
 
 export function CookAgainButton({ menuId }: { menuId: string }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +25,7 @@ export function CookAgainButton({ menuId }: { menuId: string }) {
 
   return (
     <Button type="button" onClick={handleClick} disabled={loading}>
-      {loading ? "Preparing..." : "Cook Again"}
+      {loading ? t("favorites.cookAgainPreparing", "Preparing...") : t("favorites.cookAgain", "Cook Again")}
     </Button>
   );
 }
