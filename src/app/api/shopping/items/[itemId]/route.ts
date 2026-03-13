@@ -1,13 +1,26 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { isShoppingItemStatus, mapShoppingStatusToPurchased } from "@/lib/shopping-status";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ itemId: string }> }) {
   const { itemId } = await params;
-  const { purchased } = await request.json();
+  const payload = (await request.json().catch(() => null)) as { status?: string; purchased?: boolean } | null;
+  const purchased = payload?.purchased;
+  const status = payload?.status;
 
-  if (typeof purchased !== "boolean") {
-    return NextResponse.json({ error: "purchased must be a boolean" }, { status: 400 });
+  let nextStatus: "purchased" | "already_have" | "not_purchased";
+  if (typeof status === "string") {
+    if (!isShoppingItemStatus(status)) {
+      return NextResponse.json({ error: "status must be one of purchased, already_have, not_purchased" }, { status: 400 });
+    }
+    nextStatus = status;
+  } else if (typeof purchased === "boolean") {
+    nextStatus = purchased ? "purchased" : "not_purchased";
+  } else {
+    return NextResponse.json({ error: "Provide a valid status or purchased boolean" }, { status: 400 });
   }
+
+  const nextPurchased = mapShoppingStatusToPurchased(nextStatus);
 
   const supabaseServer = await createSupabaseServerClient();
   const {
@@ -36,7 +49,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ it
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await supabase.from("shopping_items").update({ purchased }).eq("id", itemId);
+  const { error } = await supabase.from("shopping_items").update({ status: nextStatus, purchased: nextPurchased }).eq("id", itemId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ success: true });

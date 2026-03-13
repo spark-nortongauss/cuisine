@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ShoppingBasket } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n/i18n-provider";
 
 export function ShoppingListButton({ menuId }: { menuId: string }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export function ShoppingListButton({ menuId }: { menuId: string }) {
     const payload = (await res.json().catch(() => null)) as { success?: boolean; error?: string } | null;
 
     if (!res.ok || !payload?.success) {
-      setError(payload?.error ?? "Could not open shopping list");
+      setError(payload?.error ?? t("shopping.openListError", "Could not open shopping list"));
       setIsLoading(false);
       return;
     }
@@ -38,8 +40,8 @@ export function ShoppingListButton({ menuId }: { menuId: string }) {
         onClick={ensureShoppingList}
         disabled={isLoading}
         size="icon"
-        aria-label={isLoading ? "Preparing shopping list..." : "Shopping List"}
-        title={isLoading ? "Preparing shopping list..." : "Shopping List"}
+        aria-label={isLoading ? t("shopping.preparingList", "Preparing shopping list...") : t("shopping.shoppingList", "Shopping List")}
+        title={isLoading ? t("shopping.preparingList", "Preparing shopping list...") : t("shopping.shoppingList", "Shopping List")}
       >
         {isLoading ? <Loader2 size={16} className="animate-spin" /> : <ShoppingBasket size={16} />}
       </Button>

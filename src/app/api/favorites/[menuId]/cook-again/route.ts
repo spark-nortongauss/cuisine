@@ -4,6 +4,7 @@ import { generateCookPlanFromMenu, generateShoppingListFromMenu } from "@/lib/ai
 import { mapShoppingItemsToInsert } from "@/lib/db-schema";
 import type { MenuOption } from "@/types/domain";
 import type { Database } from "@/lib/supabase/database.types";
+import { normalizeShoppingItemStatus } from "@/lib/shopping-status";
 
 type MenuOptionRow = Database["public"]["Tables"]["menu_options"]["Row"];
 type MenuDishRow = Database["public"]["Tables"]["menu_dishes"]["Row"];
@@ -114,7 +115,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ me
   if (sourceShoppingList) {
     const { data: sourceItems } = await supabase
       .from("shopping_items")
-      .select("section, item_name, quantity, unit, note, purchased, estimated_unit_price_eur, estimated_total_price_eur, sort_order")
+      .select("section, item_name, quantity, unit, note, purchased, status, estimated_unit_price_eur, estimated_total_price_eur, sort_order")
       .eq("shopping_list_id", sourceShoppingList.id)
       .order("sort_order", { ascending: true });
 
@@ -126,18 +127,22 @@ export async function POST(_request: Request, { params }: { params: Promise<{ me
 
     if (newShoppingList && (sourceItems ?? []).length) {
       await supabase.from("shopping_items").insert(
-        ((sourceItems ?? []) as Array<Pick<ShoppingItemRow, "section" | "item_name" | "quantity" | "unit" | "note" | "purchased" | "estimated_unit_price_eur" | "estimated_total_price_eur" | "sort_order">>).map((item) => ({
+        ((sourceItems ?? []) as Array<Pick<ShoppingItemRow, "section" | "item_name" | "quantity" | "unit" | "note" | "purchased" | "status" | "estimated_unit_price_eur" | "estimated_total_price_eur" | "sort_order">>).map((item) => {
+          const status = normalizeShoppingItemStatus(item.status, item.purchased);
+          return {
           shopping_list_id: newShoppingList.id,
           section: item.section,
           item_name: item.item_name,
           quantity: item.quantity,
           unit: item.unit,
           note: item.note,
-          purchased: item.purchased,
+          status,
+          purchased: status === "purchased" || status === "already_have",
           estimated_unit_price_eur: item.estimated_unit_price_eur,
           estimated_total_price_eur: item.estimated_total_price_eur,
           sort_order: item.sort_order,
-        })),
+          };
+        }),
       );
     }
   }

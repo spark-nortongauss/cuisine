@@ -23,7 +23,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ shoppingL
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await supabase.from("shopping_items").update({ purchased: true }).eq("shopping_list_id", shoppingListId);
+  const { error } = await supabase
+    .from("shopping_items")
+    .update({ status: "purchased", purchased: true })
+    .eq("shopping_list_id", shoppingListId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

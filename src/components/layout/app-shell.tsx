@@ -14,7 +14,7 @@ import { ChefAssistant } from "@/components/modules/chef-assistant";
 function isPublicLayout(pathname: string | null) {
   if (!pathname) return false;
   const isApprovalTokenRoute = /^\/approval\/[^/]+$/.test(pathname);
-  return pathname === "/login" || isApprovalTokenRoute || pathname.startsWith("/feedback/");
+  return pathname === "/login" || pathname === "/landing" || isApprovalTokenRoute || pathname.startsWith("/feedback/");
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {

@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/i18n/i18n-provider";
+import { localizeMealType } from "@/lib/i18n/labels";
 
 const restrictionOptions = ["seafood", "shellfish", "gluten", "lactose", "peanuts", "tree nuts", "eggs", "soy", "sesame", "vegetarian", "vegan", "pork-free", "diabetes type 1", "diabetes type 2"];
 const mealTypes: FormValues["mealType"][] = ["breakfast", "brunch", "lunch", "mid-afternoon", "dinner"];
@@ -44,18 +45,18 @@ function nowForDateTimeLocal() {
   return local.toISOString().slice(0, 16);
 }
 
-function resolveGenerateErrorMessage(payload: GenerateMenuApiResponse, status: number) {
+function resolveGenerateErrorMessage(payload: GenerateMenuApiResponse, status: number, t: (key: string, fallback?: string) => string) {
   const code = payload.code;
   if (payload.error && typeof payload.error === "string") {
     const suffix = process.env.NODE_ENV === "development" && code ? ` (${code})` : "";
-    return `Unable to generate menu. ${payload.error}${suffix}`;
+    return `${t("generate.errors.unable", "Unable to generate menu.")} ${payload.error}${suffix}`;
   }
 
   const serveAtError = typeof payload.error === "object" ? payload.error?.fieldErrors?.serveAt?.[0] : undefined;
   if (serveAtError) return serveAtError;
 
-  if (status === 400) return "Unable to generate menu. Please check your menu inputs and try again.";
-  return "Unable to generate menu. Please try again.";
+  if (status === 400) return t("generate.errors.invalidInput", "Unable to generate menu. Please check your menu inputs and try again.");
+  return t("generate.errors.retry", "Unable to generate menu. Please try again.");
 }
 
 
@@ -82,9 +83,9 @@ async function refreshMenuImagesUntilSettled(menuId: string, currentOptions: Men
   return latest;
 }
 
-function normalizeInviteePreference(invitee: InviteePreferenceInput | undefined, index: number): InviteePreferenceInput {
+function normalizeInviteePreference(invitee: InviteePreferenceInput | undefined, index: number, labelPrefix: string): InviteePreferenceInput {
   return {
-    label: invitee?.label?.trim() || `Individual ${index + 1}`,
+    label: invitee?.label?.trim() || `${labelPrefix} ${index + 1}`,
     name: invitee?.name ?? "",
     restrictions: Array.isArray(invitee?.restrictions) ? invitee.restrictions : [],
   };
@@ -104,7 +105,8 @@ async function requestMenuImages(menuId: string, prioritizedOptionId?: string) {
 }
 
 export function GenerateMenuForm() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
+  const individualLabel = t("generate.form.individual", "Individual");
   const [menus, setMenus] = useState<MenuOption[]>([]);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -119,7 +121,7 @@ export function GenerateMenuForm() {
       restrictions: [],
       serveAt: nowForDateTimeLocal(),
       inviteeCount: 6,
-      inviteePreferences: Array.from({ length: 6 }, (_, index) => normalizeInviteePreference(undefined, index)),
+      inviteePreferences: Array.from({ length: 6 }, (_, index) => normalizeInviteePreference(undefined, index, individualLabel)),
     },
   });
 
@@ -128,13 +130,22 @@ export function GenerateMenuForm() {
 
   useEffect(() => {
     const safeCount = Math.min(60, Math.max(1, inviteeCount || 1));
-    const nextPreferences = Array.from({ length: safeCount }, (_, index) => normalizeInviteePreference(inviteePreferences[index], index));
+    const currentPreferences = form.getValues("inviteePreferences") ?? [];
+    const nextPreferences = Array.from({ length: safeCount }, (_, index) => normalizeInviteePreference(currentPreferences[index], index, individualLabel));
 
-    form.setValue("inviteePreferences", nextPreferences, { shouldDirty: true });
+    if (currentPreferences.length !== nextPreferences.length) {
+      form.setValue("inviteePreferences", nextPreferences, { shouldDirty: true });
+    }
 
     const aggregate = Array.from(new Set(nextPreferences.flatMap((invitee) => invitee.restrictions ?? [])));
-    form.setValue("restrictions", aggregate, { shouldDirty: true });
-  }, [inviteeCount]);
+    const currentRestrictions = form.getValues("restrictions") ?? [];
+    const sameRestrictions = aggregate.length === currentRestrictions.length
+      && aggregate.every((value) => currentRestrictions.includes(value));
+
+    if (!sameRestrictions) {
+      form.setValue("restrictions", aggregate, { shouldDirty: true });
+    }
+  }, [form, individualLabel, inviteeCount]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     setIsLoading(true);
@@ -144,7 +155,7 @@ export function GenerateMenuForm() {
       const sanitizedPreferences = (values.inviteePreferences ?? [])
         .slice(0, values.inviteeCount)
         .map((invitee, index) => {
-          const normalized = normalizeInviteePreference(invitee, index);
+          const normalized = normalizeInviteePreference(invitee, index, individualLabel);
           return {
             ...normalized,
             name: normalized.name?.trim() || null,
@@ -161,7 +172,7 @@ export function GenerateMenuForm() {
       const data = (await res.json()) as GenerateMenuApiResponse;
 
       if (!res.ok || !data.success) {
-        form.setError("serveAt", { message: resolveGenerateErrorMessage(data, res.status) });
+        form.setError("serveAt", { message: resolveGenerateErrorMessage(data, res.status, t) });
         return;
       }
 
@@ -183,9 +194,9 @@ export function GenerateMenuForm() {
         });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unexpected network error";
+      const message = error instanceof Error ? error.message : t("generate.errors.network", "Unexpected network error");
       const suffix = process.env.NODE_ENV === "development" ? ` (${message})` : "";
-      form.setError("serveAt", { message: `Unable to generate menu. Please retry.${suffix}` });
+      form.setError("serveAt", { message: `${t("generate.errors.retry", "Unable to generate menu. Please try again.")}${suffix}` });
     } finally {
       setIsLoading(false);
     }
@@ -198,8 +209,8 @@ export function GenerateMenuForm() {
     if (!selectedServiceTime) return "";
     const parsed = new Date(selectedServiceTime);
     if (Number.isNaN(parsed.getTime())) return "";
-    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(parsed);
-  }, [selectedServiceTime]);
+    return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(parsed);
+  }, [locale, selectedServiceTime]);
 
   const selectOption = async (optionId: string) => {
     if (!menuId || isSelecting) return;
@@ -251,7 +262,7 @@ export function GenerateMenuForm() {
                     selectedMealType === item ? "border-primary/40 bg-primary/10 text-primary" : "border-border/70 bg-card/70 text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {item}
+                  {localizeMealType(item, t)}
                 </button>
               ))}
             </div>
@@ -343,7 +354,7 @@ export function GenerateMenuForm() {
                           )}
                         >
                           {selected ? <Check size={12} /> : null}
-                          {item}
+                          {t(`generate.restrictions.${item}`, item)}
                         </button>
                       );
                     })}

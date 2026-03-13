@@ -81,6 +81,7 @@ create table if not exists public.shopping_items (
   quantity numeric,
   unit text,
   note text,
+  status text not null default 'not_purchased' check (status in ('purchased', 'already_have', 'not_purchased')),
   purchased boolean not null default false,
   estimated_unit_price_eur numeric,
   estimated_total_price_eur numeric,

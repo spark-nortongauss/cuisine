@@ -19,13 +19,6 @@ type PageContext = {
   menuId?: string;
 };
 
-const STARTER_PROMPTS = [
-  "Explain the current cooking timeline",
-  "How should I plate this dish?",
-  "What can I prepare in advance?",
-  "Suggest a substitution",
-];
-
 function inferContext(pathname: string | null): PageContext {
   if (!pathname) return { pageType: "global" };
 
@@ -43,12 +36,12 @@ function inferContext(pathname: string | null): PageContext {
   return { pageType: "global" };
 }
 
-function contextLabel(context: PageContext) {
-  if (context.pageType === "cook") return "Using Cook Plan context";
-  if (context.pageType === "shopping") return "Using Shopping List context";
-  if (context.pageType === "approval") return "Using Menu context";
-  if (context.pageType === "generate") return "Using Generate workspace context";
-  return "General culinary mode";
+function contextLabel(context: PageContext, t: (key: string, fallback?: string) => string) {
+  if (context.pageType === "cook") return t("chefAssistant.context.cook", "Using Cook Plan context");
+  if (context.pageType === "shopping") return t("chefAssistant.context.shopping", "Using Shopping List context");
+  if (context.pageType === "approval") return t("chefAssistant.context.approval", "Using Menu context");
+  if (context.pageType === "generate") return t("chefAssistant.context.generate", "Using Generate workspace context");
+  return t("chefAssistant.context.global", "General culinary mode");
 }
 
 export function ChefAssistant() {
@@ -61,6 +54,12 @@ export function ChefAssistant() {
   const [error, setError] = useState<string | null>(null);
 
   const pageContext = useMemo(() => inferContext(pathname), [pathname]);
+  const starterPrompts = [
+    t("chefAssistant.starter.timeline", "Explain the current cooking timeline"),
+    t("chefAssistant.starter.plating", "How should I plate this dish?"),
+    t("chefAssistant.starter.prep", "What can I prepare in advance?"),
+    t("chefAssistant.starter.substitution", "Suggest a substitution"),
+  ];
 
   async function sendMessage(message: string) {
     const trimmed = message.trim();
@@ -150,7 +149,7 @@ export function ChefAssistant() {
               </div>
 
               <div className="mb-3 flex items-center justify-between gap-2">
-                <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">{contextLabel(pageContext)}</span>
+                <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">{contextLabel(pageContext, t)}</span>
                 <Button variant="ghost" size="sm" onClick={() => setMessages([])} disabled={!messages.length || isLoading}>
                   <Trash2 size={14} />
                   {t("chefAssistant.clear", "Clear")}
@@ -162,7 +161,7 @@ export function ChefAssistant() {
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">{t("chefAssistant.empty", "Need help with prep, cooking, plating, or service? Try one of these prompts.")}</p>
                     <div className="flex flex-wrap gap-2">
-                      {STARTER_PROMPTS.map((prompt) => (
+                      {starterPrompts.map((prompt) => (
                         <button
                           key={prompt}
                           type="button"

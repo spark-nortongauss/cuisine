@@ -4,8 +4,10 @@ import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Download, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n/i18n-provider";
 
 export function DownloadMenuPdfButton({ menuId }: { menuId: string }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,7 +36,7 @@ export function DownloadMenuPdfButton({ menuId }: { menuId: string }) {
     const blob = await fetch(pdfUrl).then((res) => res.blob());
     const file = new File([blob], filename, { type: "application/pdf" });
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], title: "Michelin Menu PDF" });
+      await navigator.share({ files: [file], title: t("approval.pdf.shareTitle", "Michelin Menu PDF") });
     }
   }
 
@@ -46,8 +48,8 @@ export function DownloadMenuPdfButton({ menuId }: { menuId: string }) {
         size="icon"
         onClick={openPreview}
         disabled={loading}
-        aria-label={loading ? "Preparing PDF..." : "Download PDF Menu"}
-        title={loading ? "Preparing PDF..." : "Download PDF Menu"}
+        aria-label={loading ? t("approval.pdf.preparing", "Preparing PDF...") : t("approval.pdf.downloadMenu", "Download PDF Menu")}
+        title={loading ? t("approval.pdf.preparing", "Preparing PDF...") : t("approval.pdf.downloadMenu", "Download PDF Menu")}
       >
         <Download size={16} />
       </Button>
@@ -56,14 +58,14 @@ export function DownloadMenuPdfButton({ menuId }: { menuId: string }) {
           <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
           <Dialog.Content className="fixed inset-x-4 top-8 z-50 mx-auto max-w-5xl rounded-2xl border border-border bg-background p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
-              <Dialog.Title className="font-serif text-xl">Michelin-style Menu Preview</Dialog.Title>
+              <Dialog.Title className="font-serif text-xl">{t("approval.pdf.previewTitle", "Michelin-style Menu Preview")}</Dialog.Title>
               <Dialog.Close asChild>
-                <button type="button" aria-label="Close"><X size={16} /></button>
+                <button type="button" aria-label={t("common.close", "Close")}><X size={16} /></button>
               </Dialog.Close>
             </div>
-            {pdfUrl ? <iframe src={pdfUrl} className="h-[70vh] w-full rounded-xl border" title="Menu PDF preview" /> : null}
+            {pdfUrl ? <iframe src={pdfUrl} className="h-[70vh] w-full rounded-xl border" title={t("approval.pdf.previewFrameTitle", "Menu PDF preview")} /> : null}
             <div className="mt-3 flex gap-2">
-              <Button type="button" onClick={sharePdf} disabled={!pdfUrl}><Share2 size={14} />Share</Button>
+              <Button type="button" onClick={sharePdf} disabled={!pdfUrl}><Share2 size={14} />{t("common.share", "Share")}</Button>
               <Button
                 type="button"
                 variant="outline"
@@ -76,7 +78,7 @@ export function DownloadMenuPdfButton({ menuId }: { menuId: string }) {
                   link.click();
                 }}
               >
-                <Download size={14} />Download
+                <Download size={14} />{t("common.download", "Download")}
               </Button>
             </div>
           </Dialog.Content>

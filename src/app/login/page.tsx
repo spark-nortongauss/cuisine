@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getServerLocale, getServerT } from "@/lib/i18n/server";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({
@@ -18,14 +19,16 @@ export default async function LoginPage({
   }
 
   const params = await searchParams;
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
 
   return (
     <section className="mx-auto flex min-h-[82vh] max-w-lg items-center">
       <Card variant="glass" className="w-full space-y-6 p-7 md:p-10">
         <div className="space-y-2 text-center">
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Gastronomic Cuisine</p>
-          <h1 className="font-serif text-5xl">Chef Login</h1>
-          <p className="text-sm text-muted-foreground">Access your private culinary command center.</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">{t("login.brand", "Gastronomic Cuisine")}</p>
+          <h1 className="font-serif text-5xl">{t("login.title", "Chef Login")}</h1>
+          <p className="text-sm text-muted-foreground">{t("login.description", "Access your private culinary command center.")}</p>
         </div>
         <LoginForm nextPath={params.next} />
       </Card>

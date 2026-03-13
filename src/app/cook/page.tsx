@@ -5,9 +5,10 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
+import { localizeMealType } from "@/lib/i18n/labels";
 
 type MenuOption = {
-  id: number;
+  id: string;
   title: string | null;
   michelin_name: string | null;
 };
@@ -55,9 +56,9 @@ export default async function CookIndexPage() {
                   return (
                     <tr key={entry.id} className="premium-row">
                       <td className="px-3 py-3 font-serif text-base text-primary underline-offset-4 hover:underline">
-                        <Link href={`/cook/${entry.menu_id}`}>{resolveMenuDisplayTitle(menu, approvedOption)}</Link>
+                        <Link href={`/cook/${entry.menu_id}`}>{resolveMenuDisplayTitle(menu, approvedOption, t("common.untitledMenu", "Untitled menu"))}</Link>
                       </td>
-                      <td className="px-3 py-3">{menu?.meal_type ?? t("common.mealFallback")}</td>
+                      <td className="px-3 py-3">{localizeMealType(menu?.meal_type, t)}</td>
                       <td className="px-3 py-3">{menu?.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}</td>
                       <td className="px-3 py-3">{formatWithLocale(locale, new Date(entry.updated_at ?? entry.created_at), { dateStyle: "medium" })}</td>
                       <td className="px-3 py-3"><span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("common.ready")}</span></td>

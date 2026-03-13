@@ -6,6 +6,7 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/sup
 import { ApprovedMenusTable } from "@/components/modules/approved-menus-table";
 import { resolveMenuDisplayTitle, resolveOptionDisplayTitle } from "@/lib/menu-display";
 import { getServerLocale, getServerT } from "@/lib/i18n/server";
+import { localizeMealType } from "@/lib/i18n/labels";
 
 const APPROVED_STATUSES = new Set(["approved", "validated", "selected"]);
 
@@ -42,8 +43,8 @@ export default async function ApprovalDashboardPage() {
       const approvedOption = (menu.menu_options ?? []).find((option) => option.id === menu.approved_option_id);
       return {
         id: menu.id,
-        title: resolveMenuDisplayTitle(menu, approvedOption),
-        mealType: menu.meal_type ?? t("common.mealFallback", "Service"),
+        title: resolveMenuDisplayTitle(menu, approvedOption, t("common.untitledMenu", "Untitled menu")),
+        mealType: localizeMealType(menu.meal_type, t),
         serveAt: menu.serve_at,
         inviteeCount: menu.invitee_count,
         status: menu.status,

@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import type { Database } from "@/lib/supabase/database.types";
-import { getServerLocale, getServerT } from "@/lib/i18n/server";
+import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
+import { localizeMealType } from "@/lib/i18n/labels";
 
 type FavoriteMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
@@ -45,9 +46,11 @@ export default async function FavoritesPage() {
                 <Card className="group overflow-hidden transition hover:-translate-y-1 hover:shadow-glow">
                   <div className="grid gap-4 md:grid-cols-[1.2fr_1fr] md:items-center">
                     <div className="space-y-2">
-                      <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{menu?.meal_type ?? t("common.mealFallback")}</p>
-                      <h2 className="font-serif text-3xl">{resolveMenuDisplayTitle(menu, approvedOption)}</h2>
-                      <p className="text-sm text-muted-foreground">{favorite.people_count ?? "-"} {t("favorites.people", "people")} · {favorite.served_on ?? t("favorites.unspecifiedDate", "unspecified date")}</p>
+                      <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{localizeMealType(menu?.meal_type, t)}</p>
+                      <h2 className="font-serif text-3xl">{resolveMenuDisplayTitle(menu, approvedOption, t("common.untitledMenu", "Untitled menu"))}</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {favorite.people_count ?? "-"} {t("favorites.people", "people")} · {favorite.served_on ? formatWithLocale(locale, new Date(favorite.served_on), { dateStyle: "medium" }) : t("favorites.unspecifiedDate", "unspecified date")}
+                      </p>
                     </div>
                     <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-card p-4">
                       <p className="mb-2 flex items-center gap-2 text-sm"><Heart size={15} className="text-primary" />{t("favorites.guestSentiment", "Guest sentiment")}</p>

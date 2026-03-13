@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 function isPublicRoute(pathname: string) {
   const isApprovalTokenRoute = /^\/approval\/[^/]+$/.test(pathname);
-  return pathname === "/login" || isApprovalTokenRoute || pathname.startsWith("/feedback/");
+  return pathname === "/login" || pathname === "/landing" || isApprovalTokenRoute || pathname.startsWith("/feedback/");
 }
 
 export async function middleware(request: NextRequest) {

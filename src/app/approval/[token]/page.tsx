@@ -9,6 +9,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { hashPublicToken } from "@/lib/db-schema";
 import { resolveStorageImageUrl } from "@/lib/menu-images";
 import { resolveOptionDisplayTitle } from "@/lib/menu-display";
+import { getServerLocale, getServerT } from "@/lib/i18n/server";
 
 type ApprovalInvite = {
   id: string;
@@ -39,6 +40,8 @@ type ApprovalInvite = {
 
 export default async function ApprovalTokenPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  const locale = await getServerLocale();
+  const t = getServerT(locale);
   const supabase = createSupabaseAdminClient();
   const tokenHash = hashPublicToken(token);
 
@@ -78,31 +81,31 @@ export default async function ApprovalTokenPage({ params }: { params: Promise<{ 
   return (
     <PageTransition>
       <PageHero
-        eyebrow="Secure Invitee View"
-        title={typedInvite.menus.title?.trim() || "Menu Approval"}
-        description="Review each curated option and cast your preference. Dish and hero imagery now load from Supabase storage signed/public URLs for reliable rendering."
+        eyebrow={t("approval.token.eyebrow", "Secure Invitee View")}
+        title={typedInvite.menus.title?.trim() || t("approval.token.title", "Menu Approval")}
+        description={t("approval.token.description", "Review each curated option and cast your preference. Dish and hero imagery are loaded from secure storage URLs for reliable rendering.")}
       />
 
       <div className="grid gap-3">
         {resolvedOptions.map((option) => (
           <Card key={option.id} className="space-y-4 transition hover:-translate-y-0.5 hover:shadow-luxe">
             {option.heroImageUrl ? (
-              <img src={option.heroImageUrl} alt={`${resolveOptionDisplayTitle(option) ?? "Menu option"} hero`} className="h-48 w-full rounded-2xl object-cover" />
+              <img src={option.heroImageUrl} alt={`${resolveOptionDisplayTitle(option) ?? t("approval.token.option", "Menu option")} ${t("approval.token.hero", "hero")}`} className="h-48 w-full rounded-2xl object-cover" />
             ) : (
               <div className="flex h-48 w-full items-center justify-center rounded-2xl border border-border/70 bg-muted/30 text-sm text-muted-foreground">
                 <ImageIcon size={16} className="mr-2" />
-                Hero image unavailable
+                {t("approval.token.heroUnavailable", "Hero image unavailable")}
               </div>
             )}
 
-            <h2 className="font-serif text-2xl">{resolveOptionDisplayTitle(option) ?? `Option ${option.option_no}`}</h2>
-            <p className="text-sm text-muted-foreground">{option.concept_summary ?? option.concept ?? "No concept summary available."}</p>
+            <h2 className="font-serif text-2xl">{resolveOptionDisplayTitle(option) ?? `${t("approval.token.option", "Option")} ${option.option_no}`}</h2>
+            <p className="text-sm text-muted-foreground">{option.concept_summary ?? option.concept ?? t("approval.token.noConcept", "No concept summary available.")}</p>
 
             <div className="grid gap-2 md:grid-cols-2">
               {option.dishes.map((dish) => (
                 <div key={dish.id} className="rounded-xl border border-border/60 bg-card/80 p-3">
                   {dish.imageUrl ? <img src={dish.imageUrl} alt={dish.dish_name} className="mb-2 h-28 w-full rounded-lg object-cover" /> : null}
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{dish.course_label ?? `Course ${dish.course_no}`}</p>
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{dish.course_label ?? `${t("approval.detail.course", "Course")} ${dish.course_no}`}</p>
                   <p className="font-medium">{dish.dish_name}</p>
                   <p className="text-sm text-muted-foreground">{dish.description}</p>
                 </div>
@@ -110,12 +113,12 @@ export default async function ApprovalTokenPage({ params }: { params: Promise<{ 
             </div>
 
             <Button variant="outline" className="w-full md:w-auto">
-              <CheckCircle2 size={15} />Vote this option
+              <CheckCircle2 size={15} />{t("approval.token.vote", "Vote this option")}
             </Button>
           </Card>
         ))}
       </div>
-      <Textarea defaultValue={typedInvite.invitee_note ?? ""} placeholder="Optional note" />
+      <Textarea defaultValue={typedInvite.invitee_note ?? ""} placeholder={t("approval.token.optionalNote", "Optional note")} />
     </PageTransition>
   );
 }

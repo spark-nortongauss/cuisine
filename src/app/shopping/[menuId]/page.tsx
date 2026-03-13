@@ -8,6 +8,7 @@ import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import type { Database } from "@/lib/supabase/database.types";
 import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
 import { ensureShoppingPriceEstimates } from "@/lib/shopping-price-estimates";
+import { localizeMealType } from "@/lib/i18n/labels";
 
 type ShoppingMenuOptionRow = Pick<Database["public"]["Tables"]["menu_options"]["Row"], "id" | "title" | "michelin_name">;
 
@@ -36,8 +37,8 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
 
   const menuOptions: ShoppingMenuOptionRow[] = (menu.menu_options ?? []) as ShoppingMenuOptionRow[];
   const approvedOption: ShoppingMenuOptionRow | null = menuOptions.find((option: ShoppingMenuOptionRow) => option.id === menu.approved_option_id) ?? null;
-  const title = resolveMenuDisplayTitle(menu, approvedOption);
-  const subtitle = `${menu.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}${menu.meal_type ? ` · ${menu.meal_type}` : ""}`;
+  const title = resolveMenuDisplayTitle(menu, approvedOption, t("common.untitledMenu", "Untitled menu"));
+  const subtitle = `${menu.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate")}${menu.meal_type ? ` · ${localizeMealType(menu.meal_type, t)}` : ""}`;
 
   if (!shoppingList) {
     return (
@@ -56,7 +57,7 @@ export default async function ShoppingDetailPage({ params }: { params: Promise<{
 
   const { data: items } = await supabase
     .from("shopping_items")
-    .select("id, section, item_name, quantity, unit, note, purchased, estimated_unit_price_eur, estimated_total_price_eur")
+    .select("id, section, item_name, quantity, unit, note, purchased, status, estimated_unit_price_eur, estimated_total_price_eur")
     .eq("shopping_list_id", shoppingList.id)
     .order("sort_order", { ascending: true });
 
