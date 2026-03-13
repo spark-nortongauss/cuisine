@@ -6,8 +6,15 @@ function isPublicRoute(pathname: string) {
   return pathname === "/login" || pathname === "/landing" || isApprovalTokenRoute || pathname.startsWith("/feedback/");
 }
 
+function withSessionCookies(source: NextResponse, target: NextResponse) {
+  source.cookies.getAll().forEach(({ name, value }) => {
+    target.cookies.set(name, value);
+  });
+  return target;
+}
+
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next({
+  let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -26,6 +33,14 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => {
+          request.cookies.set(name, value);
+        });
+
+        response = NextResponse.next({
+          request,
+        });
+
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
         });
@@ -44,14 +59,14 @@ export async function middleware(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirectUrl);
+    return withSessionCookies(response, NextResponse.redirect(redirectUrl));
   }
 
   if (user && pathname === "/login") {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
     redirectUrl.search = "";
-    return NextResponse.redirect(redirectUrl);
+    return withSessionCookies(response, NextResponse.redirect(redirectUrl));
   }
 
   return response;
