@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, CheckCircle2, Clock3, ImageIcon, ListChecks, ShoppingBasket, Sparkles, Timer, Vote } from "lucide-react";
-import { PageTransition } from "@/components/layout/page-transition";
 import { Card } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { Badge } from "@/components/ui/badge";
@@ -225,7 +224,7 @@ export default async function DashboardPage() {
   const hasData = menuIds.length > 0;
 
   return (
-    <PageTransition>
+    <section className="space-y-6 md:space-y-8">
       <PageHero
         eyebrow={t("dashboard.eyebrow", "Culinary Command Center")}
         title={t("dashboard.title", "Run every service with confidence, precision, and Michelin-level polish")}
@@ -446,6 +445,6 @@ export default async function DashboardPage() {
           </Link>
         </Card>
       ) : null}
-    </PageTransition>
+    </section>
   );
 }
