@@ -62,13 +62,6 @@ export async function middleware(request: NextRequest) {
     return withSessionCookies(response, NextResponse.redirect(redirectUrl));
   }
 
-  if (user && pathname === "/login") {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
-    redirectUrl.search = "";
-    return withSessionCookies(response, NextResponse.redirect(redirectUrl));
-  }
-
   return response;
 }
 
