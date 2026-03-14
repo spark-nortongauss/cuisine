@@ -42,7 +42,7 @@ type SuggestedMenuCard = {
   href: string;
 };
 
-export default async function DashboardPage() {
+export default async function DashboardRoutePage() {
   const locale = await getServerLocale();
   const t = getServerT(locale);
   const supabaseServer = await createSupabaseServerClient();
@@ -51,7 +51,7 @@ export default async function DashboardPage() {
   } = await supabaseServer.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect("/login?next=%2Fdashboard");
   }
 
   const supabase = createSupabaseAdminClient();
