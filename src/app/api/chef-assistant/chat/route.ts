@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 import { runChefAssistant } from "@/lib/ai/chef-assistant";
 
 export async function POST(request: Request) {
-  const supabaseServer = await createSupabaseServerClient();
+  const supabaseServer = await createSupabaseRouteHandlerClient();
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();

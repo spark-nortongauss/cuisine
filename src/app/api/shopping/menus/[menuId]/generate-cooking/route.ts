@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 import { generateCookPlanForMenu } from "@/lib/cook-plan-service";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ menuId: string }> }) {
@@ -7,7 +7,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ me
   console.info("[generate-cooking] generate-cooking triggered", { menuId });
 
   try {
-    const supabaseServer = await createSupabaseServerClient();
+    const supabaseServer = await createSupabaseRouteHandlerClient();
     const {
       data: { user },
     } = await supabaseServer.auth.getUser();

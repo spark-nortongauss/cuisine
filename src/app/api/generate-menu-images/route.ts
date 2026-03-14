@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 import { fetchMenuWithOptions, normalizeMenuOptionsWithResolvedImages } from "@/lib/menu-records";
 import { enrichMenuImages } from "@/lib/ai/menu-images";
 
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabaseServer = await createSupabaseServerClient();
+    const supabaseServer = await createSupabaseRouteHandlerClient();
     const {
       data: { user },
     } = await supabaseServer.auth.getUser();

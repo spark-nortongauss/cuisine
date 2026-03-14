@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 import { resolveStorageImageUrl } from "@/lib/menu-images";
 import { buildMichelinMenuPdf } from "@/lib/pdf/menu-pdf";
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
@@ -8,7 +8,7 @@ import type { Database } from "@/lib/supabase/database.types";
 export async function GET(_request: Request, { params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
 
-  const supabaseServer = await createSupabaseServerClient();
+  const supabaseServer = await createSupabaseRouteHandlerClient();
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();

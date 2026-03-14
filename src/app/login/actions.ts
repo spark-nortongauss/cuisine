@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 import { getServerLocale, getServerT } from "@/lib/i18n/server";
 
 export type LoginState = {
@@ -19,7 +19,7 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
     return { error: t("login.errors.missingCredentials", "Enter both email and password.") };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseRouteHandlerClient();
   const { error } = await supabase.auth.signInWithPassword({
     email: email.trim(),
     password,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 import { isShoppingItemStatus, mapShoppingStatusToPurchased } from "@/lib/shopping-status";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ itemId: string }> }) {
@@ -22,7 +22,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ it
 
   const nextPurchased = mapShoppingStatusToPurchased(nextStatus);
 
-  const supabaseServer = await createSupabaseServerClient();
+  const supabaseServer = await createSupabaseRouteHandlerClient();
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();

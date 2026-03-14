@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 import { generateCookPlanForMenu } from "@/lib/cook-plan-service";
 
 export async function POST(request: Request) {
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, code: "MISSING_MENU_ID", error: "menuId is required" }, { status: 400 });
   }
 
-  const supabaseServer = await createSupabaseServerClient();
+  const supabaseServer = await createSupabaseRouteHandlerClient();
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();
