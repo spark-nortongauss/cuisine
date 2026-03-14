@@ -42,6 +42,29 @@ type SuggestedMenuCard = {
   href: string;
 };
 
+function normalizeMenuOption(option: MenuOptionRow | null | undefined): MenuOptionRow | null {
+  if (!option) return null;
+  return {
+    id: option.id,
+    option_no: option.option_no,
+    title: option.title,
+    michelin_name: option.michelin_name,
+    hero_image_path: option.hero_image_path,
+  };
+}
+
+function getDisplayTitle(menu: MenuRow | null | undefined, option: MenuOptionRow | null | undefined) {
+  return resolveMenuDisplayTitle(
+    menu ? { title: menu.title } : null,
+    option
+      ? {
+          title: option.title,
+          michelin_name: option.michelin_name,
+        }
+      : null,
+  );
+}
+
 export default async function DashboardRoutePage() {
   const locale = await getServerLocale();
   const t = getServerT(locale);
@@ -90,9 +113,9 @@ export default async function DashboardRoutePage() {
   const suggestedMenus: SuggestedMenuCard[] = await Promise.all(
     suggestionsBase.map(async (menu) => {
       const options = (menu.menu_options ?? []) as MenuOptionRow[];
-      const selectedOption = options.find((option) => option.id === menu.approved_option_id) ?? options[0] ?? null;
+      const selectedOption = normalizeMenuOption(options.find((option) => option.id === menu.approved_option_id) ?? options[0] ?? null);
       const heroImageUrl = await resolveStorageImageUrl({ supabase, path: selectedOption?.hero_image_path });
-      const menuTitle = resolveMenuDisplayTitle(menu, selectedOption);
+      const menuTitle = getDisplayTitle(menu, selectedOption);
       const href = menu.approved_option_id ? `/approval/menus/${menu.id}` : "/approval";
       return {
         id: menu.id,
@@ -140,12 +163,12 @@ export default async function DashboardRoutePage() {
     const hasCookPlan = cookPlans.some((plan) => plan.menuId === menu.id);
     const hasShoppingList = shoppingLists.some((list) => list.menuId === menu.id);
     const options = (menu.menu_options ?? []) as MenuOptionRow[];
-    const selectedOption = options.find((option) => option.id === menu.approved_option_id) ?? options[0] ?? null;
+    const selectedOption = normalizeMenuOption(options.find((option) => option.id === menu.approved_option_id) ?? options[0] ?? null);
     const href = hasCookPlan ? `/cook/${menu.id}` : hasShoppingList ? `/shopping/${menu.id}` : menu.approved_option_id ? `/approval/menus/${menu.id}` : "/generate";
 
     return {
       id: menu.id,
-      title: resolveMenuDisplayTitle(menu, selectedOption),
+      title: getDisplayTitle(menu, selectedOption),
       mealType: localizeMealType(menu.meal_type, t),
       serveAt: menu.serve_at,
       status: localizeMenuStatus(menu.status, t),
@@ -156,10 +179,10 @@ export default async function DashboardRoutePage() {
   const favorites = (favoriteRows ?? []).map((favorite) => {
     const menu = Array.isArray(favorite.menus) ? favorite.menus[0] : favorite.menus;
     const options = (menu?.menu_options ?? []) as MenuOptionRow[];
-    const selectedOption = options.find((option) => option.id === menu?.approved_option_id) ?? options[0] ?? null;
+    const selectedOption = normalizeMenuOption(options.find((option) => option.id === menu?.approved_option_id) ?? options[0] ?? null);
     return {
       id: favorite.menu_id,
-      title: resolveMenuDisplayTitle(menu, selectedOption),
+      title: getDisplayTitle(menu as MenuRow | null, selectedOption),
       rating: Math.round(favorite.rating_percent),
       mealType: localizeMealType(menu?.meal_type, t),
     };
