@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowRight, CalendarClock, Heart, ListChecks, Sparkles, Timer, Vote } from "lucide-react";
 import { PageTransition } from "@/components/layout/page-transition";
 import { EmptyState } from "@/components/modules/empty-state";
@@ -74,7 +75,7 @@ function buildStatusLabel(menu: DashboardMenu, hasShoppingList: boolean, hasCook
   return { label: t("dashboard.status.generating", "Awaiting selection"), variant: "warning" as const };
 }
 
-export default async function DashboardPage() {
+export default async function DashboardRoutePage() {
   const locale = await getServerLocale();
   const t = getServerT(locale);
 
@@ -82,6 +83,10 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();
+
+  if (!user) {
+    redirect("/login?next=%2Fdashboard");
+  }
 
   const supabase = createSupabaseAdminClient();
 
