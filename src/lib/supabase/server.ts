@@ -19,24 +19,9 @@ export async function createSupabaseServerClient() {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          try {
-            const maybePromise = cookieStore.set(name, value, options) as unknown;
-
-            if (
-              typeof maybePromise === "object" &&
-              maybePromise !== null &&
-              "then" in maybePromise &&
-              typeof maybePromise.then === "function"
-            ) {
-              void (maybePromise as Promise<unknown>).catch(() => {
-                // Server Components can't mutate cookies during render; middleware handles refresh writes.
-              });
-            }
-          } catch {
-            // Server Components can't mutate cookies during render; middleware handles refresh writes.
-          }
-        });
+        // Server Components can't mutate cookies during render. Middleware is responsible for refresh writes.
+        // Intentionally noop to avoid Next.js runtime errors when Supabase attempts token persistence.
+        void cookiesToSet;
       },
     },
   });
