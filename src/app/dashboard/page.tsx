@@ -77,6 +77,11 @@ export default async function DashboardRoutePage() {
     redirect("/login?next=%2Fdashboard");
   }
 
+  const dashboardEnabled = process.env.NEXT_PUBLIC_ENABLE_DASHBOARD === "true";
+  if (!dashboardEnabled) {
+    redirect("/generate");
+  }
+
   const supabase = createSupabaseAdminClient();
   const { data: menuRows } = await supabase
     .from("menus")

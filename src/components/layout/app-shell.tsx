@@ -22,8 +22,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const publicLayout = isPublicLayout(pathname);
   const { t } = useI18n();
 
+  const dashboardEnabled = process.env.NEXT_PUBLIC_ENABLE_DASHBOARD === "true";
+
   const navItems = [
-    { href: "/dashboard", label: t("app.nav.dashboard", "Dashboard"), icon: LayoutDashboard },
+    { href: dashboardEnabled ? "/dashboard" : "/generate", label: t("app.nav.dashboard", "Dashboard"), icon: LayoutDashboard },
     { href: "/generate", label: t("app.nav.generate", "Generate"), icon: Sparkles },
     { href: "/approval", label: t("app.nav.approval", "Approval"), icon: Vote },
     { href: "/shopping", label: t("app.nav.shopping", "Shopping"), icon: ListChecks },
