@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   const payload = await request.json().catch(() => null);
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "menuId is required" }, { status: 400 });
   }
 
-  const supabaseServer = await createSupabaseServerClient();
+  const supabaseServer = await createSupabaseRouteHandlerClient();
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();

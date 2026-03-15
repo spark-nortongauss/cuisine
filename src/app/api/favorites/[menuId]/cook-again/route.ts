@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 import { generateCookPlanFromMenu, generateShoppingListFromMenu } from "@/lib/ai/openai";
 import { mapShoppingItemsToInsert } from "@/lib/db-schema";
 import type { MenuOption } from "@/types/domain";
@@ -14,7 +14,7 @@ type CookStepRow = Database["public"]["Tables"]["cook_steps"]["Row"];
 export async function POST(_request: Request, { params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
 
-  const supabaseServer = await createSupabaseServerClient();
+  const supabaseServer = await createSupabaseRouteHandlerClient();
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();

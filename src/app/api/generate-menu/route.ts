@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { generateMenuSchema } from "@/lib/schemas/menu";
 import { generateMichelinMenus } from "@/lib/ai/openai";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 import { normalizeMenuOptionsWithResolvedImages } from "@/lib/menu-records";
 import { enrichMenuImages } from "@/lib/ai/menu-images";
 
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       inviteePreferencesCount: inviteePreferences.length,
     });
 
-    const supabaseServer = await createSupabaseServerClient();
+    const supabaseServer = await createSupabaseRouteHandlerClient();
     const {
       data: { user },
     } = await supabaseServer.auth.getUser();
