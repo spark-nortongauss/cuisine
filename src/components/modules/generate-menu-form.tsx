@@ -17,24 +17,10 @@ import { Input } from "@/components/ui/input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { locales } from "@/lib/i18n/config";
+import { translate } from "@/lib/i18n/messages";
+import { formatRestrictionLabel, restrictionOptions } from "@/lib/menu-restrictions";
 import { cn } from "@/lib/utils";
-
-const restrictionOptions = [
-  "seafood",
-  "shellfish",
-  "gluten",
-  "lactose",
-  "peanuts",
-  "tree nuts",
-  "eggs",
-  "soy",
-  "sesame",
-  "vegetarian",
-  "vegan",
-  "pork-free",
-  "diabetes type 1",
-  "diabetes type 2",
-];
 
 const mealTypes: FormValues["mealType"][] = ["breakfast", "brunch", "lunch", "mid-afternoon", "dinner"];
 const courseCounts: FormValues["courseCount"][] = [1, 3, 4, 5, 6];
@@ -54,6 +40,8 @@ type GenerateMenuImagesApiResponse = {
   success?: boolean;
   options?: MenuOption[];
 };
+
+type Translator = (key: string, fallback?: string) => string;
 
 function nowForDateTimeLocal() {
   const now = new Date();
@@ -84,13 +72,13 @@ function hasPendingImages(options: MenuOption[]) {
   );
 }
 
-async function refreshMenuImagesUntilSettled(menuId: string, currentOptions: MenuOption[], prioritizedOptionId?: string) {
+async function refreshMenuImagesUntilSettled(menuId: string, locale: string, currentOptions: MenuOption[], prioritizedOptionId?: string) {
   let latest = currentOptions;
 
   for (let attempt = 0; attempt < 6; attempt += 1) {
     if (!hasPendingImages(latest)) break;
     await new Promise((resolve) => setTimeout(resolve, 2500));
-    const refreshed = await requestMenuImages(menuId, prioritizedOptionId);
+    const refreshed = await requestMenuImages(menuId, locale, prioritizedOptionId);
     if (!refreshed?.length) continue;
     latest = refreshed;
   }
@@ -98,19 +86,42 @@ async function refreshMenuImagesUntilSettled(menuId: string, currentOptions: Men
   return latest;
 }
 
-function normalizeInviteePreference(invitee: InviteePreferenceInput | undefined, index: number): InviteePreferenceInput {
+function defaultInviteeLabel(index: number, t: Translator) {
+  return `${t("generate.form.individual", "Individual")} ${index + 1}`;
+}
+
+function isAutoInviteeLabel(label: string | undefined, index: number) {
+  const value = label?.trim();
+  if (!value) return true;
+
+  return locales.some((locale) => value === `${translate(locale, "generate.form.individual", "Individual")} ${index + 1}`);
+}
+
+function normalizeInviteePreference(invitee: InviteePreferenceInput | undefined, index: number, t: Translator): InviteePreferenceInput {
   return {
-    label: invitee?.label?.trim() || `Individual ${index + 1}`,
+    label: invitee?.label?.trim() || defaultInviteeLabel(index, t),
     name: invitee?.name ?? "",
     restrictions: Array.isArray(invitee?.restrictions) ? invitee.restrictions : [],
   };
 }
 
-async function requestMenuImages(menuId: string, prioritizedOptionId?: string) {
+async function requestMenuImages(menuId: string, locale: string, prioritizedOptionId?: string) {
   const res = await fetch("/api/generate-menu-images", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ menuId, prioritizedOptionId }),
+    body: JSON.stringify({ menuId, prioritizedOptionId, locale }),
+  });
+
+  if (!res.ok) return null;
+  const data = (await res.json()) as GenerateMenuImagesApiResponse;
+  if (!data.success || !data.options) return null;
+  return data.options;
+}
+
+async function requestLocalizedMenuOptions(menuId: string, locale: string) {
+  const res = await fetch(`/api/menus/${menuId}/localized-options?locale=${encodeURIComponent(locale)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
   });
 
   if (!res.ok) return null;
@@ -123,8 +134,25 @@ function courseLabel(count: number, t: (key: string, fallback?: string) => strin
   return `${count} ${count === 1 ? t("generate.form.courseSingle", "course") : t("generate.form.courses", "courses")}`;
 }
 
+function mealTypeLabel(value: FormValues["mealType"], t: (key: string, fallback?: string) => string) {
+  switch (value) {
+    case "breakfast":
+      return t("generate.mealTypes.breakfast", "Breakfast");
+    case "brunch":
+      return t("generate.mealTypes.brunch", "Brunch");
+    case "lunch":
+      return t("generate.mealTypes.lunch", "Lunch");
+    case "mid-afternoon":
+      return t("generate.mealTypes.midAfternoon", "Mid-afternoon");
+    case "dinner":
+      return t("generate.mealTypes.dinner", "Dinner");
+    default:
+      return value;
+  }
+}
+
 export function GenerateMenuForm() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [menus, setMenus] = useState<MenuOption[]>([]);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -139,7 +167,7 @@ export function GenerateMenuForm() {
       restrictions: [],
       serveAt: nowForDateTimeLocal(),
       inviteeCount: 6,
-      inviteePreferences: Array.from({ length: 6 }, (_, index) => normalizeInviteePreference(undefined, index)),
+      inviteePreferences: Array.from({ length: 6 }, (_, index) => normalizeInviteePreference(undefined, index, t)),
     },
   });
 
@@ -153,7 +181,7 @@ export function GenerateMenuForm() {
   useEffect(() => {
     const currentPreferences = form.getValues("inviteePreferences") ?? [];
     const safeCount = Math.min(60, Math.max(1, inviteeCount || 1));
-    const nextPreferences = Array.from({ length: safeCount }, (_, index) => normalizeInviteePreference(currentPreferences[index], index));
+    const nextPreferences = Array.from({ length: safeCount }, (_, index) => normalizeInviteePreference(currentPreferences[index], index, t));
     const currentRestrictions = form.getValues("restrictions") ?? [];
 
     const aggregate = Array.from(new Set(nextPreferences.flatMap((invitee) => invitee.restrictions ?? [])));
@@ -163,14 +191,44 @@ export function GenerateMenuForm() {
     if (JSON.stringify(currentRestrictions) !== JSON.stringify(aggregate)) {
       form.setValue("restrictions", aggregate, { shouldDirty: true });
     }
-  }, [form, inviteeCount]);
+  }, [form, inviteeCount, t]);
+
+  useEffect(() => {
+    const currentPreferences = form.getValues("inviteePreferences") ?? [];
+    const nextPreferences = currentPreferences.map((invitee, index) =>
+      isAutoInviteeLabel(invitee?.label, index)
+        ? {
+            ...invitee,
+            label: defaultInviteeLabel(index, t),
+          }
+        : invitee,
+    );
+
+    if (JSON.stringify(currentPreferences) !== JSON.stringify(nextPreferences)) {
+      form.setValue("inviteePreferences", nextPreferences, { shouldDirty: true });
+    }
+  }, [form, locale, t]);
+
+  useEffect(() => {
+    if (!menuId) return;
+    let cancelled = false;
+
+    void requestLocalizedMenuOptions(menuId, locale).then((nextOptions) => {
+      if (!nextOptions?.length || cancelled) return;
+      setMenus(nextOptions);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, menuId]);
 
   const servicePreview = useMemo(() => {
     if (!selectedServiceTime) return "";
     const parsed = new Date(selectedServiceTime);
     if (Number.isNaN(parsed.getTime())) return "";
-    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(parsed);
-  }, [selectedServiceTime]);
+    return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(parsed);
+  }, [locale, selectedServiceTime]);
 
   const visibleInvitees = inviteePreferences.slice(0, Math.max(1, inviteeCount));
 
@@ -182,7 +240,7 @@ export function GenerateMenuForm() {
       const sanitizedPreferences = (values.inviteePreferences ?? [])
         .slice(0, values.inviteeCount)
         .map((invitee, index) => {
-          const normalized = normalizeInviteePreference(invitee, index);
+          const normalized = normalizeInviteePreference(invitee, index, t);
           return {
             ...normalized,
             name: normalized.name?.trim() || null,
@@ -193,7 +251,7 @@ export function GenerateMenuForm() {
       const res = await fetch("/api/generate-menu", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, inviteePreferences: sanitizedPreferences, restrictions: aggregate }),
+        body: JSON.stringify({ ...values, inviteePreferences: sanitizedPreferences, restrictions: aggregate, locale }),
       });
 
       const data = (await res.json()) as GenerateMenuApiResponse;
@@ -209,11 +267,11 @@ export function GenerateMenuForm() {
       setSelectedOptionId(null);
 
       if (createdMenuId) {
-        void requestMenuImages(createdMenuId).then((nextOptions) => {
+        void requestMenuImages(createdMenuId, locale).then((nextOptions) => {
           if (!nextOptions?.length) return;
 
           setMenus(nextOptions);
-          void refreshMenuImagesUntilSettled(createdMenuId, nextOptions).then((settledOptions) => {
+          void refreshMenuImagesUntilSettled(createdMenuId, locale, nextOptions).then((settledOptions) => {
             if (settledOptions?.length) {
               setMenus(settledOptions);
             }
@@ -241,11 +299,11 @@ export function GenerateMenuForm() {
       });
       if (res.ok) {
         setSelectedOptionId(optionId);
-        void requestMenuImages(menuId, optionId).then((nextOptions) => {
+        void requestMenuImages(menuId, locale, optionId).then((nextOptions) => {
           if (!nextOptions?.length) return;
 
           setMenus(nextOptions);
-          void refreshMenuImagesUntilSettled(menuId, nextOptions, optionId).then((settledOptions) => {
+          void refreshMenuImagesUntilSettled(menuId, locale, nextOptions, optionId).then((settledOptions) => {
             if (settledOptions?.length) {
               setMenus(settledOptions);
             }
@@ -284,7 +342,7 @@ export function GenerateMenuForm() {
               <SegmentedControl
                 options={mealTypes.map((item) => ({
                   value: item,
-                  label: item,
+                  label: mealTypeLabel(item, t),
                   description: t(`generate.form.mealTypeDescription.${item}`, "Tailored pacing and structure"),
                 }))}
                 value={selectedMealType}
@@ -367,7 +425,7 @@ export function GenerateMenuForm() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="section-label">{t("generate.form.guestProfile", "Guest profile")}</p>
-                        <p className="mt-1 font-serif text-2xl">{invitee.label || `Individual ${inviteeIndex + 1}`}</p>
+                        <p className="mt-1 font-serif text-2xl">{invitee.label || defaultInviteeLabel(inviteeIndex, t)}</p>
                       </div>
                       <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-primary">
                         <UserRound size={16} />
@@ -421,7 +479,7 @@ export function GenerateMenuForm() {
                             )}
                           >
                             {selected ? <Check size={12} /> : null}
-                            {item}
+                            {formatRestrictionLabel(t, item)}
                           </button>
                         );
                       })}
@@ -461,7 +519,7 @@ export function GenerateMenuForm() {
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
               <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
                 <p className="section-label">{t("generate.summary.meal", "Meal type")}</p>
-                <p className="mt-2 text-lg font-semibold capitalize text-card-foreground">{selectedMealType}</p>
+                <p className="mt-2 text-lg font-semibold text-card-foreground">{mealTypeLabel(selectedMealType, t)}</p>
               </div>
               <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
                 <p className="section-label">{t("generate.summary.courses", "Course count")}</p>
@@ -486,7 +544,7 @@ export function GenerateMenuForm() {
                 {restrictions.length ? (
                   restrictions.map((restriction) => (
                     <Badge key={restriction} variant="default" className="tracking-[0.08em] normal-case">
-                      {restriction}
+                      {formatRestrictionLabel(t, restriction)}
                     </Badge>
                   ))
                 ) : (

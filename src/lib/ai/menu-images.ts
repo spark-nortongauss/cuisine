@@ -216,8 +216,9 @@ export async function enrichMenuImages(params: {
   ownerId: string;
   menuId: string;
   prioritizedOptionId?: string;
+  onlyPrioritizedOption?: boolean;
 }) {
-  const { supabase, ownerId, menuId, prioritizedOptionId } = params;
+  const { supabase, ownerId, menuId, prioritizedOptionId, onlyPrioritizedOption = false } = params;
 
   const { data: options, error } = await supabase
     .from("menu_options")
@@ -256,7 +257,12 @@ export async function enrichMenuImages(params: {
     });
   }
 
-  for (const option of ordered) {
+  const optionsToProcess =
+    onlyPrioritizedOption && prioritizedOptionId
+      ? ordered.filter((option) => option.id === prioritizedOptionId)
+      : ordered;
+
+  for (const option of optionsToProcess) {
     try {
       await enrichDishPlatingGuidance({ supabase, option });
     } catch (error) {

@@ -40,12 +40,10 @@ export function ImageLightbox({ items, open, onOpenChange, activeIndex, onActive
   const safeIndex = clampIndex(activeIndex, itemCount);
   const activeItem = items[safeIndex];
 
-  useEffect(() => {
-    if (!open) {
-      setZoom(1);
-      setStatusMessage(null);
-    }
-  }, [open, safeIndex]);
+  function resetViewState() {
+    setZoom(1);
+    setStatusMessage(null);
+  }
 
   useEffect(() => {
     if (!open || itemCount <= 1) return;
@@ -58,6 +56,14 @@ export function ImageLightbox({ items, open, onOpenChange, activeIndex, onActive
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [itemCount, onActiveIndexChange, open, safeIndex]);
+
+  function handleOpenStateChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      resetViewState();
+    }
+
+    onOpenChange(nextOpen);
+  }
 
   const canGoPrev = itemCount > 1;
   const counterLabel = useMemo(() => `${safeIndex + 1} / ${itemCount}`, [itemCount, safeIndex]);
@@ -80,7 +86,7 @@ export function ImageLightbox({ items, open, onOpenChange, activeIndex, onActive
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenStateChange}>
       <DialogContent className="h-[min(92vh,56rem)] w-[min(98vw,72rem)] max-w-none overflow-hidden p-0" hideClose>
         <div className="flex h-full flex-col">
           <DialogHeader className="border-b border-white/10 px-5 pb-4 pt-5 md:px-6">
@@ -106,7 +112,7 @@ export function ImageLightbox({ items, open, onOpenChange, activeIndex, onActive
                     <ExternalLink size={15} />
                   </a>
                 </Button>
-                <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)} aria-label="Close image preview">
+                <Button variant="ghost" size="icon-sm" onClick={() => handleOpenStateChange(false)} aria-label="Close image preview">
                   <X size={15} />
                 </Button>
               </div>

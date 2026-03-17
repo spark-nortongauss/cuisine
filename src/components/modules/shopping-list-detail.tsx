@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/i18n/i18n-provider";
+import { resolveDisplayedShoppingItemEstimate } from "@/lib/shopping-estimate";
 
 type ShoppingItem = {
   id: string;
@@ -96,8 +97,10 @@ export function ShoppingListDetail({ menuId, initialItems, estimatedTotalEur }: 
         </div>
 
         <div className="mt-3 space-y-2">
-          <p className="text-sm font-medium">{t("shopping.estimatedTotalFrance", "Estimated total in France")}: ~{estimatedTotalEur !== null ? eur.format(estimatedTotalEur) : t("common.notAvailable", "N/A")}</p>
-          <p className="text-xs text-muted-foreground">{t("shopping.estimateDisclaimer", "Approximate AI estimate in EUR, for planning only.")}</p>
+          <p className="text-sm font-medium">
+            {t("shopping.detail.estimatedCost", "Estimated cost")}: {estimatedTotalEur !== null ? eur.format(estimatedTotalEur) : t("common.notAvailable", "N/A")}
+          </p>
+          <p className="text-xs text-muted-foreground">{t("shopping.detail.estimateMatchesList", "This total mirrors the item estimates currently visible below.")}</p>
           <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
             {t("shopping.generateCookingAvailable", "Generate Cooking is available once your shopping list exists.")}
@@ -116,7 +119,11 @@ export function ShoppingListDetail({ menuId, initialItems, estimatedTotalEur }: 
             <p className="font-medium">{item.item_name}</p>
             <p className="text-xs text-muted-foreground">{item.section ?? t("shopping.general", "General")} · {item.quantity ?? "-"} {item.unit ?? ""}</p>
             {item.note ? <p className="text-xs text-muted-foreground">{t("shopping.note", "Note")}: {item.note}</p> : null}
-            <p className="text-xs text-muted-foreground">{t("shopping.estimatedItemPrice", "Estimated price")}: ~{item.estimated_total_price_eur !== null && item.estimated_total_price_eur !== undefined ? eur.format(item.estimated_total_price_eur) : item.estimated_unit_price_eur !== null && item.estimated_unit_price_eur !== undefined ? `${eur.format(item.estimated_unit_price_eur)} / ${item.unit ?? t("shopping.item", "item")}` : t("common.notAvailable", "N/A")}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("shopping.estimatedItemPrice", "Estimated price")}: ~{resolveDisplayedShoppingItemEstimate(item) !== null
+                ? eur.format(resolveDisplayedShoppingItemEstimate(item) as number)
+                : t("common.notAvailable", "N/A")}
+            </p>
           </div>
           <input
             type="checkbox"

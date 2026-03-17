@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { generateMenuSchema } from "@/lib/schemas/menu";
-import { generateMichelinMenus } from "@/lib/ai/openai";
+import { generateValidatedMichelinMenus } from "@/lib/ai/menu-safety";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeMenuOptionsWithResolvedImages } from "@/lib/menu-records";
 import { enrichMenuImages } from "@/lib/ai/menu-images";
+import { resolveLocale } from "@/lib/i18n/config";
+import { localizeMenuOptions } from "@/lib/menu-localization";
 
 type GenerateMenuSuccessResponse = {
   success: true;
@@ -47,6 +49,7 @@ export async function POST(request: Request) {
 
   try {
     const json = await request.json();
+    const requestLocale = resolveLocale(typeof json?.locale === "string" ? json.locale : null);
     const parsed = generateMenuSchema.safeParse(json);
 
     if (!parsed.success) {
@@ -112,14 +115,14 @@ export async function POST(request: Request) {
     }
     console.info("[generate-menu] menus insert end", { menuId: menu.id });
 
-    let options: Awaited<ReturnType<typeof generateMichelinMenus>>;
+    let options: Awaited<ReturnType<typeof generateValidatedMichelinMenus>>;
 
     try {
       console.info("[generate-menu] OpenAI request start", {
         mealType: payload.mealType,
         courseCount: payload.courseCount,
       });
-      options = await generateMichelinMenus({ ...payload, restrictions: aggregateRestrictions, inviteePreferences });
+      options = await generateValidatedMichelinMenus({ ...payload, restrictions: aggregateRestrictions, inviteePreferences });
       console.info("[generate-menu] OpenAI response received", { optionCount: options.length });
     } catch (error) {
       console.error("[generate-menu] OpenAI/parsing failed", summarizeError(error));
@@ -225,7 +228,7 @@ export async function POST(request: Request) {
     const response: GenerateMenuSuccessResponse = {
       success: true,
       menuId: menu.id,
-      options: normalizedOptions,
+      options: await localizeMenuOptions(normalizedOptions, requestLocale),
     };
 
     void enrichMenuImages({

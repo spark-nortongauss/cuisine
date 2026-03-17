@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchMenuWithOptions, normalizeMenuOptionsWithResolvedImages } from "@/lib/menu-records";
 import { enrichMenuImages } from "@/lib/ai/menu-images";
+import { resolveLocale } from "@/lib/i18n/config";
+import { localizeMenuOptions } from "@/lib/menu-localization";
 
 type GenerateMenuImagesResponse = {
   success: boolean;
@@ -13,7 +15,9 @@ type GenerateMenuImagesResponse = {
 
 export async function POST(request: Request) {
   try {
-    const { menuId, prioritizedOptionId } = await request.json();
+    const { menuId, prioritizedOptionId, locale, includeOptions } = await request.json();
+    const requestLocale = resolveLocale(typeof locale === "string" ? locale : null);
+    const shouldIncludeOptions = includeOptions !== false;
 
     if (!menuId || typeof menuId !== "string") {
       return NextResponse.json<GenerateMenuImagesResponse>(
@@ -56,7 +60,12 @@ export async function POST(request: Request) {
       ownerId: user.id,
       menuId,
       prioritizedOptionId: typeof prioritizedOptionId === "string" ? prioritizedOptionId : undefined,
+      onlyPrioritizedOption: !shouldIncludeOptions && typeof prioritizedOptionId === "string",
     });
+
+    if (!shouldIncludeOptions) {
+      return NextResponse.json<GenerateMenuImagesResponse>({ success: true, menuId });
+    }
 
     const { data: refreshedMenu, error: refreshedError } = await fetchMenuWithOptions(menuId);
 
@@ -70,7 +79,7 @@ export async function POST(request: Request) {
     return NextResponse.json<GenerateMenuImagesResponse>({
       success: true,
       menuId,
-      options: await normalizeMenuOptionsWithResolvedImages(refreshedMenu.menu_options ?? []),
+      options: await localizeMenuOptions(await normalizeMenuOptionsWithResolvedImages(refreshedMenu.menu_options ?? []), requestLocale),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";

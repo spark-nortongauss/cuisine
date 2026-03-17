@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
-import { generateShoppingListFromMenu } from "@/lib/ai/openai";
+import { generateValidatedShoppingList } from "@/lib/ai/menu-safety";
 import { fetchMenuWithOptions, normalizeMenuOptions } from "@/lib/menu-records";
 import { mapShoppingItemsToInsert } from "@/lib/db-schema";
 
@@ -56,7 +56,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Approved option is missing" }, { status: 400 });
   }
 
-  const aiItems = await generateShoppingListFromMenu(approvedOption, menu.invitee_count ?? 4);
+  const aiItems = await generateValidatedShoppingList({
+    menuOption: approvedOption,
+    inviteeCount: menu.invitee_count ?? 4,
+    restrictions: menu.restrictions ?? [],
+  });
 
   const { data: shoppingList, error: listError } = await supabase
     .from("shopping_lists")

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
-import { generateCookPlanFromMenu, generateShoppingListFromMenu } from "@/lib/ai/openai";
+import { generateValidatedCookPlan, generateValidatedShoppingList } from "@/lib/ai/menu-safety";
 import { mapShoppingItemsToInsert } from "@/lib/db-schema";
 import type { MenuOption } from "@/types/domain";
 import type { Database } from "@/lib/supabase/database.types";
@@ -200,7 +200,11 @@ export async function POST(_request: Request, { params }: { params: Promise<{ me
         })),
       };
 
-      const aiShoppingItems = await generateShoppingListFromMenu(menuOption, sourceMenu.invitee_count ?? 4);
+      const aiShoppingItems = await generateValidatedShoppingList({
+        menuOption,
+        inviteeCount: sourceMenu.invitee_count ?? 4,
+        restrictions: sourceMenu.restrictions ?? [],
+      });
       const { data: regeneratedList } = await supabase
         .from("shopping_lists")
         .upsert({ menu_id: newMenu.id, generated_by: "ai", estimated_total_eur: null }, { onConflict: "menu_id" })
@@ -211,7 +215,19 @@ export async function POST(_request: Request, { params }: { params: Promise<{ me
         await supabase.from("shopping_items").insert(mapShoppingItemsToInsert(regeneratedList.id, aiShoppingItems));
       }
 
-      const aiCookPlan = await generateCookPlanFromMenu(menuOption, sourceMenu.serve_at ?? new Date().toISOString());
+      const aiCookPlan = await generateValidatedCookPlan({
+        menuOption,
+        serveAtIso: sourceMenu.serve_at ?? new Date().toISOString(),
+        restrictions: sourceMenu.restrictions ?? [],
+        shoppingItems: aiShoppingItems.map((item) => ({
+          section: item.section,
+          item_name: item.item_name,
+          quantity: item.quantity ?? null,
+          unit: item.unit ?? null,
+          note: item.note ?? null,
+          purchased: false,
+        })),
+      });
       const { data: regeneratedCookPlan } = await supabase
         .from("cook_plans")
         .upsert(

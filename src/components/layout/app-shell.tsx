@@ -38,22 +38,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {!publicLayout ? (
           <header className="sticky top-0 z-40 mb-6">
             <div className="glass-surface rounded-[2rem] px-4 py-3 shadow-luxe md:px-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <Link href="/dashboard" className="group flex items-center gap-3 rounded-[1.6rem] border border-white/10 bg-white/[0.04] px-3 py-2.5 text-card-foreground transition hover:bg-white/[0.08]">
-                  <span className="rounded-2xl bg-accent-luxury p-2.5 text-primary-foreground shadow-soft">
-                    <ChefHat size={17} />
-                  </span>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">{t("app.brandTop", "Gastronomic")}</p>
-                    <p className="font-serif text-xl leading-none tracking-[0.045em]">
-                      {t("app.brandBottom", "Cuisine")}
-                    </p>
-                  </div>
-                  <ArrowUpRight size={14} className="hidden text-muted-foreground transition group-hover:text-primary md:block" />
-                </Link>
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/dashboard"
+                    className="group flex min-w-0 max-w-full items-center gap-3 rounded-[1.6rem] border border-white/10 bg-white/[0.04] px-3 py-2.5 text-card-foreground transition hover:bg-white/[0.08]"
+                  >
+                    <span className="rounded-2xl bg-accent-luxury p-2.5 text-primary-foreground shadow-soft">
+                      <ChefHat size={17} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">{t("app.brandTop", "Gastronomic")}</p>
+                      <p className="truncate font-serif text-xl leading-none tracking-[0.045em]">
+                        {t("app.brandBottom", "Cuisine")}
+                      </p>
+                    </div>
+                    <ArrowUpRight size={14} className="hidden shrink-0 text-muted-foreground transition group-hover:text-primary md:block" />
+                  </Link>
 
-                <nav className="hidden min-w-0 flex-1 md:block" aria-label={t("app.nav.aria", "Primary navigation")}>
-                  <ul className="flex items-center justify-center gap-1 px-1">
+                  <div className="ml-auto flex w-full items-center justify-end gap-2 sm:w-auto xl:hidden">
+                    <LocaleSwitcher />
+                    <LogoutButton />
+                  </div>
+                </div>
+
+                <nav className="hidden min-w-0 md:block xl:flex-1" aria-label={t("app.nav.aria", "Primary navigation")}>
+                  <ul className="flex flex-wrap items-center gap-1.5 px-1 md:justify-start lg:justify-center">
                     {navItems.map(({ href, label, icon: Icon }) => {
                       const active = pathname?.startsWith(href);
                       return (
@@ -61,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           <Link
                             href={href}
                             className={cn(
-                              "relative z-10 flex items-center gap-2 rounded-[1.25rem] px-3 py-2.5 text-sm font-medium transition lg:px-3.5",
+                              "relative z-10 flex items-center gap-2 whitespace-nowrap rounded-[1.25rem] px-3 py-2.5 text-sm font-medium transition lg:px-3.5",
                               active ? "text-card-foreground" : "text-muted-foreground hover:text-card-foreground",
                             )}
                           >
@@ -81,7 +91,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </ul>
                 </nav>
 
-                <div className="ml-auto flex items-center gap-2">
+                <div className="hidden shrink-0 items-center gap-2 xl:flex">
                   <LocaleSwitcher />
                   <LogoutButton />
                 </div>

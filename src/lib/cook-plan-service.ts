@@ -1,43 +1,7 @@
-import { generateCookPlanFromMenu } from "@/lib/ai/openai";
+import { generateValidatedCookPlan } from "@/lib/ai/menu-safety";
 import { normalizeMenuOptions } from "@/lib/menu-records";
 import { resolveCanonicalMenuTitleFromOption } from "@/lib/menu-display";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-
-
-type CookStepPayload = {
-  step_no: number;
-  phase: string;
-  title: string;
-  details: string;
-  technique: string;
-  knife_cut?: string | null;
-  utensils: string[];
-  dish_name?: string | null;
-  relative_minutes?: number | null;
-};
-
-function normalizeCookStep(step: CookStepPayload, index: number): CookStepPayload {
-  const cleanedDetails = step.details
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .join("\n");
-
-  return {
-    step_no: Number.isInteger(step.step_no) && step.step_no > 0 ? step.step_no : index + 1,
-    phase: step.phase.trim() || "cooking phase",
-    title: step.title.trim() || `Step ${index + 1}`,
-    details: cleanedDetails || step.details.trim(),
-    technique: step.technique.trim() || "Chef technique",
-    knife_cut: step.knife_cut?.trim() || null,
-    utensils: (() => {
-      const cleaned = step.utensils.map((utensil) => utensil.trim()).filter(Boolean);
-      return cleaned.length ? cleaned : ["Chef knife"];
-    })(),
-    dish_name: step.dish_name?.trim() || null,
-    relative_minutes: Number.isInteger(step.relative_minutes ?? null) ? step.relative_minutes ?? null : null,
-  };
-}
 
 
 export async function generateCookPlanForMenu({
@@ -54,7 +18,7 @@ export async function generateCookPlanForMenu({
 
     const { data: menu, error: menuError } = await supabase
       .from("menus")
-      .select("id, owner_id, title, serve_at, approved_option_id, menu_options(id, title, michelin_name, concept_summary, concept, sort_order, option_no, hero_image_path, hero_image_prompt, menu_dishes(course_no, course_label, dish_name, description, plating_notes, decoration_notes, image_prompt, image_path))")
+      .select("id, owner_id, title, serve_at, restrictions, approved_option_id, menu_options(id, title, michelin_name, concept_summary, concept, sort_order, option_no, hero_image_path, hero_image_prompt, menu_dishes(course_no, course_label, dish_name, description, plating_notes, decoration_notes, image_prompt, image_path))")
       .eq("id", menuId)
       .maybeSingle();
 
@@ -99,10 +63,11 @@ export async function generateCookPlanForMenu({
     });
 
     console.info("[generate-cooking] OpenAI cooking request started", { menuId: menu.id, selectedOptionId: selected.id });
-    const rawPayload = await generateCookPlanFromMenu(
-      selected,
-      menu.serve_at ?? new Date().toISOString(),
-      (shoppingItems ?? []).map((item) => ({
+    const payload = await generateValidatedCookPlan({
+      menuOption: selected,
+      serveAtIso: menu.serve_at ?? new Date().toISOString(),
+      restrictions: menu.restrictions ?? [],
+      shoppingItems: (shoppingItems ?? []).map((item) => ({
         section: item.section,
         item_name: item.item_name,
         quantity: item.quantity,
@@ -110,12 +75,8 @@ export async function generateCookPlanForMenu({
         note: item.note,
         purchased: item.purchased,
       })),
-    );
-    console.info("[generate-cooking] OpenAI cooking response received", { menuId: menu.id, stepCount: rawPayload.steps.length });
-
-    const normalizedSteps = rawPayload.steps.map((step, index) => normalizeCookStep(step, index));
-
-    const payload = { ...rawPayload, steps: normalizedSteps };
+    });
+    console.info("[generate-cooking] OpenAI cooking response received", { menuId: menu.id, stepCount: payload.steps.length });
 
     const { data: cookPlan, error: cookPlanError } = await supabase
       .from("cook_plans")

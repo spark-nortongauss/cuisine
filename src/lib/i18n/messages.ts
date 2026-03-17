@@ -6,6 +6,7 @@ import es from "@/messages/es";
 import ar from "@/messages/ar";
 import zh from "@/messages/zh";
 import hi from "@/messages/hi";
+import { supplementalMessages } from "@/messages/supplemental";
 
 export const messagesByLocale = {
   en,
@@ -29,8 +30,18 @@ function getPathValue(source: unknown, path: string): MessageLeaf | undefined {
 }
 
 export function translate(locale: Locale, key: string, fallback?: string): string {
-  const value = getPathValue(messagesByLocale[locale], key) ?? getPathValue(messagesByLocale.en, key);
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  const sources = [
+    supplementalMessages[locale],
+    messagesByLocale[locale],
+    supplementalMessages.en,
+    messagesByLocale.en,
+  ];
+
+  for (const source of sources) {
+    const value = getPathValue(source, key);
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+  }
+
   return fallback ?? key;
 }

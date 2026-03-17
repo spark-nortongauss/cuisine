@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
-import { generateShoppingListFromMenu, generateCookPlanFromMenu } from "@/lib/ai/openai";
+import { generateValidatedCookPlan, generateValidatedShoppingList } from "@/lib/ai/menu-safety";
 import { fetchMenuWithOptions, normalizeMenuOptions } from "@/lib/menu-records";
 import { resolveCanonicalMenuTitleFromOption } from "@/lib/menu-display";
 import { mapShoppingItemsToInsert } from "@/lib/db-schema";
@@ -30,7 +30,11 @@ export async function POST(request: Request) {
   if (!selected) return NextResponse.json({ success: false, code: "NO_OPTION", error: "No generated option found" }, { status: 400 });
 
   console.info("[validate-menu] shopping list generation start", { menuId: menu.id, optionId: selected.id });
-  const shoppingItems = await generateShoppingListFromMenu(selected, menu.invitee_count ?? 4);
+  const shoppingItems = await generateValidatedShoppingList({
+    menuOption: selected,
+    inviteeCount: menu.invitee_count ?? 4,
+    restrictions: menu.restrictions ?? [],
+  });
 
   const { data: shoppingList, error: shoppingError } = await supabase
     .from("shopping_lists")
@@ -55,7 +59,19 @@ export async function POST(request: Request) {
   console.info("[validate-menu] shopping list generation end", { menuId: menu.id, shoppingListId: shoppingList.id });
 
   console.info("[validate-menu] cook plan generation start", { menuId: menu.id, optionId: selected.id });
-  const cookPayload = await generateCookPlanFromMenu(selected, menu.serve_at ?? new Date().toISOString());
+  const cookPayload = await generateValidatedCookPlan({
+    menuOption: selected,
+    serveAtIso: menu.serve_at ?? new Date().toISOString(),
+    restrictions: menu.restrictions ?? [],
+    shoppingItems: shoppingItems.map((item) => ({
+      section: item.section,
+      item_name: item.item_name,
+      quantity: item.quantity ?? null,
+      unit: item.unit ?? null,
+      note: item.note ?? null,
+      purchased: false,
+    })),
+  });
 
   const { data: cookPlan, error: cookPlanError } = await supabase
     .from("cook_plans")

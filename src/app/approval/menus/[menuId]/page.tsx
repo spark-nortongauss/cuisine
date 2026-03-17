@@ -6,6 +6,10 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/sup
 import { resolveMenuDisplayTitle } from "@/lib/menu-display";
 import { resolveStorageImageUrl } from "@/lib/menu-images";
 import { formatWithLocale, getServerLocale, getServerT } from "@/lib/i18n/server";
+import { evaluateDishRestrictionCompliance } from "@/lib/menu-restrictions";
+import { localizeApprovedOption, localizeCookPlan, localizeCookSteps, localizeDishRows, localizeDisplayTitle } from "@/lib/menu-localization";
+import { translatePlainText } from "@/lib/ai/content-translation";
+import { ensureRestrictionSafeMenuArtifacts } from "@/lib/menu-safety-repair";
 
 export default async function ApprovedMenuDetailPage({ params }: { params: Promise<{ menuId: string }> }) {
   const { menuId } = await params;
@@ -28,6 +32,8 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
   if (!menu) return notFound();
   if (!user?.id || menu.owner_id !== user.id) return notFound();
   if (!menu.approved_option_id) return notFound();
+
+  await ensureRestrictionSafeMenuArtifacts(menu.id);
 
   const [{ data: approvedOption }, { data: dishes }, { data: cookPlan }, { data: shoppingList }, { data: favorite }] = await Promise.all([
     supabase
@@ -66,8 +72,28 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
     Promise.all((dishes ?? []).map((dish) => resolveStorageImageUrl({ supabase, path: dish.image_path }))),
   ]);
 
-  const displayTitle = resolveMenuDisplayTitle(menu, approvedOption);
-  const description = `${menu.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate", "No date")}${menu.meal_type ? ` / ${menu.meal_type}` : ""}`;
+  const dishCompliance = (dishes ?? []).map((dish) => ({
+    dishId: dish.id,
+    checks: evaluateDishRestrictionCompliance(
+      {
+        name: dish.dish_name,
+        description: dish.description,
+        platingNotes: dish.plating_notes ?? "",
+        decorationNotes: dish.decoration_notes ?? "",
+      },
+      menu.restrictions ?? [],
+    ),
+  }));
+
+  const [localizedOption, localizedDishes, localizedCookPlan, localizedCookSteps, displayTitle] = await Promise.all([
+    localizeApprovedOption(approvedOption, locale),
+    localizeDishRows(dishes ?? [], locale),
+    localizeCookPlan(cookPlan, locale),
+    localizeCookSteps(cookSteps ?? [], locale),
+    localizeDisplayTitle(locale, resolveMenuDisplayTitle(menu, approvedOption)),
+  ]);
+  const localizedMealType = await translatePlainText(locale, menu.meal_type, "Translate the meal type label for an approved menu detail page.");
+  const description = `${menu.serve_at ? formatWithLocale(locale, new Date(menu.serve_at), { dateStyle: "medium", timeStyle: "short" }) : t("common.noDate", "No date")}${localizedMealType ? ` / ${localizedMealType}` : ""}`;
 
   return (
     <PageTransition>
@@ -78,15 +104,16 @@ export default async function ApprovedMenuDetailPage({ params }: { params: Promi
       />
 
       <ApprovedMenuDetailView
-        menu={menu}
-        approvedOption={approvedOption}
-        dishes={(dishes ?? []).map((dish, index) => ({
+        menu={{ ...menu, meal_type: localizedMealType }}
+        approvedOption={localizedOption}
+        dishes={(localizedDishes ?? []).map((dish, index) => ({
           ...dish,
           imageUrl: dishImageUrls[index] ?? null,
         }))}
         heroImageUrl={heroImageUrl}
-        cookPlan={cookPlan}
-        cookSteps={cookSteps ?? []}
+        cookPlan={localizedCookPlan}
+        cookSteps={localizedCookSteps ?? []}
+        dishCompliance={dishCompliance}
         favorite={Boolean(favorite)}
         shoppingItemCount={shoppingItems?.length ?? 0}
         hasShoppingList={Boolean(shoppingList)}

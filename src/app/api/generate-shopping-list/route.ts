@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateShoppingListFromMenu } from "@/lib/ai/openai";
+import { generateValidatedShoppingList } from "@/lib/ai/menu-safety";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchMenuWithOptions, normalizeMenuOptions } from "@/lib/menu-records";
 import { resolveCanonicalMenuTitleFromOption } from "@/lib/menu-display";
@@ -35,7 +35,11 @@ export async function POST(request: Request) {
   if (!selectedOption) return NextResponse.json({ success: false, code: "NO_OPTION", error: "No menu option available" }, { status: 400 });
 
   console.info("[shopping-list] generation start", { menuId: menu.id, optionId: selectedOption.id });
-  const aiItems = await generateShoppingListFromMenu(selectedOption, menu.invitee_count ?? 4);
+  const aiItems = await generateValidatedShoppingList({
+    menuOption: selectedOption,
+    inviteeCount: menu.invitee_count ?? 4,
+    restrictions: menu.restrictions ?? [],
+  });
 
   const { data: shoppingList, error: shoppingListError } = await supabase
     .from("shopping_lists")

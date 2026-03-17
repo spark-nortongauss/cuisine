@@ -7,6 +7,7 @@ type MenuRow = {
   owner_id: string;
   chef_user_id: string | null;
   invitee_count: number | null;
+  restrictions: string[];
   meal_type: string | null;
   serve_at: string | null;
   approved_option_id: string | null;
@@ -73,6 +74,7 @@ export async function fetchMenuWithOptions(menuId: string) {
       owner_id,
       chef_user_id,
       invitee_count,
+      restrictions,
       meal_type,
       serve_at,
       approved_option_id,

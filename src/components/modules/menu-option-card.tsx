@@ -10,6 +10,7 @@ import { MenuOption } from "@/types/domain";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useI18n } from "@/components/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type MenuOptionCardProps = {
@@ -26,6 +27,7 @@ function resolveClientImageUrl(url?: string | null, path?: string | null) {
 }
 
 function DishImage({ imagePath, imageUrl }: { imagePath?: string | null; imageUrl?: string | null }) {
+  const { t } = useI18n();
   const resolvedImage = useMemo(() => resolveClientImageUrl(imageUrl, imagePath), [imagePath, imageUrl]);
   const [hasError, setHasError] = useState(false);
 
@@ -44,16 +46,17 @@ function DishImage({ imagePath, imageUrl }: { imagePath?: string | null; imageUr
   return (
     <div className="flex h-36 w-full items-center justify-center rounded-[1.25rem] border border-white/10 bg-white/[0.04] text-xs text-muted-foreground md:h-32 md:w-48">
       <ImageIcon size={16} className="mr-2 text-primary" />
-      Image pending
+      {t("generate.card.imagePending", "Image pending")}
     </div>
   );
 }
 
 export function MenuOptionCard({ option, onSelect, isSelected = false, selecting = false }: MenuOptionCardProps) {
+  const { t } = useI18n();
   const heroImageSrc = useMemo(() => resolveClientImageUrl(option.heroImageUrl, option.heroImagePath), [option.heroImagePath, option.heroImageUrl]);
   const [heroHasError, setHeroHasError] = useState(false);
   const visualsReady = Boolean(option.heroImageUrl) && option.dishes.every((dish) => Boolean(dish.imageUrl));
-  const courseCountLabel = `${option.dishes.length} ${option.dishes.length === 1 ? "course" : "courses"}`;
+  const courseCountLabel = `${option.dishes.length} ${option.dishes.length === 1 ? t("generate.form.courseSingle", "course") : t("generate.form.courses", "courses")}`;
 
   return (
     <motion.div
@@ -74,12 +77,14 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
             />
           ) : (
             <div className="flex h-52 w-full items-end bg-[radial-gradient(circle_at_top_left,rgba(232,194,117,0.18),transparent_30%),linear-gradient(160deg,rgba(26,34,50,0.98),rgba(11,16,29,0.96))] p-5 md:h-64">
-              <Badge variant={visualsReady ? "success" : "default"}>{visualsReady ? "Visual set ready" : "Hero image pending"}</Badge>
+              <Badge variant={visualsReady ? "success" : "default"}>
+                {visualsReady ? t("generate.card.visualReady", "Visual set ready") : t("generate.card.heroPending", "Hero image pending")}
+              </Badge>
             </div>
           )}
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/75 to-transparent" aria-hidden />
           <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-            <Badge variant={isSelected ? "success" : "accent"}>{isSelected ? "Selected" : "Michelin-inspired"}</Badge>
+            <Badge variant={isSelected ? "success" : "accent"}>{isSelected ? t("generate.card.selected", "Selected") : t("generate.card.michelinInspired", "Michelin-inspired")}</Badge>
             <Badge variant="default">{courseCountLabel}</Badge>
           </div>
         </div>
@@ -87,17 +92,19 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
         <div className="space-y-5 p-5 md:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-2">
-              <p className="section-label">Curated option</p>
+              <p className="section-label">{t("generate.card.curatedOption", "Curated option")}</p>
               <h3 className="font-serif text-3xl leading-tight md:text-4xl">{option.title}</h3>
               <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">{option.concept}</p>
             </div>
             <div className="min-w-[12rem] rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
-              <p className="section-label">Readiness</p>
-              <p className="mt-2 text-sm font-semibold text-card-foreground">{visualsReady ? "Visuals completed" : "Visual generation still running"}</p>
+              <p className="section-label">{t("generate.card.readiness", "Readiness")}</p>
+              <p className="mt-2 text-sm font-semibold text-card-foreground">
+                {visualsReady ? t("generate.card.visualsCompleted", "Visuals completed") : t("generate.card.visualsRunning", "Visual generation still running")}
+              </p>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                 {visualsReady
-                  ? "Use the option card below to review plating details and commit the final selection."
-                  : "Signed image URLs will continue refreshing in the background while you compare options."}
+                  ? t("generate.card.visualsCompletedText", "Use the option card below to review plating details and commit the final selection.")
+                  : t("generate.card.visualsRunningText", "Signed image URLs will continue refreshing in the background while you compare options.")}
               </p>
             </div>
           </div>
@@ -126,20 +133,20 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
                       <div className="rounded-[1.2rem] border border-white/10 bg-white/[0.03] p-3">
                         <p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
                           <UtensilsCrossed size={14} className="text-primary" />
-                          Plating
+                          {t("approval.detail.plating", "Plating")}
                         </p>
                         <p className="text-sm leading-relaxed text-card-foreground">{dish.platingNotes}</p>
                       </div>
                       <div className="rounded-[1.2rem] border border-white/10 bg-white/[0.03] p-3">
                         <p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
                           <Wine size={14} className="text-primary" />
-                          Beverage
+                          {t("generate.card.beverage", "Beverage")}
                         </p>
-                        <p className="text-sm leading-relaxed text-card-foreground">{dish.beverageSuggestion ?? "No beverage pairing suggested yet."}</p>
+                        <p className="text-sm leading-relaxed text-card-foreground">{dish.beverageSuggestion ?? t("generate.card.noBeverage", "No beverage pairing suggested yet.")}</p>
                       </div>
                     </div>
                     {process.env.NODE_ENV === "development" ? (
-                      <p className="text-xs italic text-muted-foreground">Image prompt: {dish.imagePrompt}</p>
+                      <p className="text-xs italic text-muted-foreground">{t("generate.card.imagePrompt", "Image prompt")}: {dish.imagePrompt}</p>
                     ) : null}
                   </div>
                 </Accordion.Content>
@@ -149,14 +156,16 @@ export function MenuOptionCard({ option, onSelect, isSelected = false, selecting
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
             <div className="space-y-1">
-              <p className="section-label">Decision</p>
+              <p className="section-label">{t("generate.card.decision", "Decision")}</p>
               <p className="text-sm text-muted-foreground">
-                {isSelected ? "This option is locked as the service direction." : "Choose this option to advance it into approval, shopping, and cook planning."}
+                {isSelected
+                  ? t("generate.card.decisionLocked", "This option is locked as the service direction.")
+                  : t("generate.card.decisionHelper", "Choose this option to advance it into approval, shopping, and cook planning.")}
               </p>
             </div>
             <Button variant={isSelected ? "secondary" : "default"} onClick={onSelect} disabled={!onSelect || selecting || isSelected}>
               {selecting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-              {selecting ? "Selecting..." : isSelected ? "Selected" : "Select option"}
+              {selecting ? t("generate.card.selecting", "Selecting...") : isSelected ? t("generate.card.selected", "Selected") : t("generate.card.select", "Select option")}
             </Button>
           </div>
         </div>
